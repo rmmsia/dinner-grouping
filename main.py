@@ -79,10 +79,13 @@ class GreedyGroupManager:
                     self.pairing_scores.at[person2, person1] += 1
 
     def save_pairing_scores(self, filename: str):
-        self.pairing_scores.to_csv(filename)
+        # Convert to integers before saving
+        integer_scores = self.pairing_scores.astype(int)
+        integer_scores.to_csv(filename)
 
     def print_pairing_scores(self):
-        print(self.pairing_scores)
+        # Print as integers for cleaner output
+        print(self.pairing_scores.astype(int))
 
 # Example usage
 manager = GreedyGroupManager(pairing_scores_file="FIDES Cumulative Dinner Attendance AY2425 Sem 1.csv")
