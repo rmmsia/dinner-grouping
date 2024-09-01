@@ -5,7 +5,9 @@ from typing import List, Optional
 class GreedyGroupManager:
     def __init__(self, pairing_scores_file: Optional[str] = None, people: Optional[List[str]] = None):
         if pairing_scores_file:
+            # Load existing pairing scores
             self.load_pairing_scores(pairing_scores_file)
+            # Backup the original pairing scores to update later
         elif people:
             self.people = people
             self.pairing_scores = pd.DataFrame(0, index=people, columns=people)
