@@ -3,28 +3,25 @@ import numpy as np
 from typing import List, Optional
 
 class GreedyGroupManager:
-    def __init__(self, pairing_scores_file: Optional[str] = None, people: Optional[List[str]] = None):
+    # Creates an instance of the GreedyGroupManager class, loading the pairing scores matrix
+    def __init__(self, pairing_scores_file: Optional[str] = None):
         if pairing_scores_file:
             self.load_pairing_scores(pairing_scores_file)
-        elif people:
-            self.people = people
-            self.pairing_scores = pd.DataFrame(0, index=people, columns=people)
-            np.fill_diagonal(self.pairing_scores.values, 0)
         else:
-            raise ValueError("Either pairing_scores_file or people must be provided")
+            raise ValueError("Pairing scores matrix must be provided")
 
+    # Loads the pairing scores matrix from a CSV file
     def load_pairing_scores(self, filename: str):
         if filename.endswith('.csv'):
             self.pairing_scores = pd.read_csv(filename, index_col=0)
-        elif filename.endswith(('.xls', '.xlsx')):
-            self.pairing_scores = pd.read_excel(filename, index_col=0)
         else:
-            raise ValueError("Unsupported file format. Please use .csv, .xls, or .xlsx")
+            raise ValueError("Unsupported file format. Please use .csv")
         
         self.people = list(self.pairing_scores.index)
         self.pairing_scores = self.pairing_scores.astype(float)
         np.fill_diagonal(self.pairing_scores.values, 0)
 
+    # Creates groups of attendees based on the pairing scores matrix by greedily selecting the best pairings
     def create_groups(self, group_size: int, attendees: List[str]) -> List[List[str]]:
         # Add new attendees to the pairing scores matrix if they don't exist
         new_attendees = [a for a in attendees if a not in self.pairing_scores.index]
@@ -58,6 +55,7 @@ class GreedyGroupManager:
             self.pairing_scores[attendee] = 0
         self.people.extend(new_attendees)
 
+    # Greedy algorithm to form a group of attendees based on the pairing scores matrix
     def _form_group_greedy(self, available_people: List[str], group_size: int, filtered_scores: pd.DataFrame) -> List[str]:
         first_person = min(available_people, key=lambda p: filtered_scores[p].sum())
         group = [first_person]
@@ -87,19 +85,43 @@ class GreedyGroupManager:
         # Print as integers for cleaner output
         print(self.pairing_scores.astype(int))
 
-# Example usage
-manager = GreedyGroupManager(pairing_scores_file="FIDES Cumulative Dinner Attendance AY2425 Sem 1.csv")
+# User input to pass in pairing scores csv
+try:
+    pairing_scores_file = input("Enter the pairing scores file ending in '.csv': ")
+    if not pairing_scores_file.endswith('.csv'):
+        raise ValueError("File must be a csv file")
+    with open(pairing_scores_file, 'r') as file:
+        if not file.read():
+            raise ValueError("File is empty")
+except FileNotFoundError:
+    raise ValueError("File does not exist")
 
-# List of attendees for this session, including a new person
-attendees = ["velociryan", "qkobs", "adriechue", "luketaneh", "mrjiahao", "etheIyn", "kkchris", "Swirlyz", "joan_aw", "new_person"]
+manager = GreedyGroupManager(pairing_scores_file=pairing_scores_file)
+
+# Pass attendees txt file - get list of attendees for session
+try:
+    attendees_file = input("Enter the attendees file ending in '.txt': ")
+    with open(attendees_file, 'r') as file:
+        attendees = [line.strip() for line in file]  # Strip removes newline characters
+except FileNotFoundError:
+    raise ValueError("File does not exist")
+
+# Set group size
+try:
+    group_size = int(input("Enter the group size: "))
+except ValueError:
+    raise ValueError("Group size must be an integer")
 
 # Create groups
-groups = manager.create_groups(group_size=3, attendees=attendees)
+print()
+groups = manager.create_groups(group_size=group_size, attendees=attendees)
 for i, group in enumerate(groups, 1):
     print(f"Group {i}: {group}")
-
+'''
 print("\nUpdated Pairing Scores:")
 manager.print_pairing_scores()
-
+'''
 # Save updated pairing scores
 manager.save_pairing_scores("updated_pairing_scores.csv")
+print()
+print("Pairing scores saved to 'updated_pairing_scores.csv'")
