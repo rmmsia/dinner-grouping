@@ -22,9 +22,15 @@ class GreedyGroupManager:
             raise ValueError("Unsupported file format. Please use .csv, .xls, or .xlsx")
         
         self.people = list(self.pairing_scores.index)
+        self.pairing_scores = self.pairing_scores.astype(float)
         np.fill_diagonal(self.pairing_scores.values, 0)
 
     def create_groups(self, group_size: int, attendees: List[str]) -> List[List[str]]:
+        # Add new attendees to the pairing scores matrix if they don't exist
+        new_attendees = [a for a in attendees if a not in self.pairing_scores.index]
+        if new_attendees:
+            self._add_new_attendees(new_attendees)
+
         # Filter pairing scores to only include attendees
         available_people = [p for p in attendees if p in self.people]
         filtered_scores = self.pairing_scores.loc[available_people, available_people]
@@ -46,6 +52,12 @@ class GreedyGroupManager:
         self._update_pairing_scores(groups)
         return groups
 
+    def _add_new_attendees(self, new_attendees: List[str]):
+        for attendee in new_attendees:
+            self.pairing_scores.loc[attendee] = 0
+            self.pairing_scores[attendee] = 0
+        self.people.extend(new_attendees)
+
     def _form_group_greedy(self, available_people: List[str], group_size: int, filtered_scores: pd.DataFrame) -> List[str]:
         first_person = min(available_people, key=lambda p: filtered_scores[p].sum())
         group = [first_person]
@@ -61,11 +73,10 @@ class GreedyGroupManager:
 
     def _update_pairing_scores(self, groups: List[List[str]]):
         for group in groups:
-            for person1 in group:
-                for person2 in group:
-                    if person1 != person2:
-                        self.pairing_scores.at[person1, person2] += 1
-                        self.pairing_scores.at[person2, person1] += 1
+            for i, person1 in enumerate(group):
+                for person2 in group[i+1:]:
+                    self.pairing_scores.at[person1, person2] += 1
+                    self.pairing_scores.at[person2, person1] += 1
 
     def save_pairing_scores(self, filename: str):
         self.pairing_scores.to_csv(filename)
@@ -76,8 +87,8 @@ class GreedyGroupManager:
 # Example usage
 manager = GreedyGroupManager(pairing_scores_file="FIDES Cumulative Dinner Attendance AY2425 Sem 1.csv")
 
-# List of attendees for this session
-attendees = ["velociryan", "qkobs", "adriechue", "luketaneh", "mrjiahao", "etheIyn", "kkchris", "Swirlyz", "joan_aw"]
+# List of attendees for this session, including a new person
+attendees = ["velociryan", "qkobs", "adriechue", "luketaneh", "mrjiahao", "etheIyn", "kkchris", "Swirlyz", "joan_aw", "new_person"]
 
 # Create groups
 groups = manager.create_groups(group_size=3, attendees=attendees)
