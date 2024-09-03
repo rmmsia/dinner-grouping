@@ -5,13 +5,18 @@
 **Prerequisites**
 
 - Python 3.12.4 or higher
+- Anaconda installation (if installing environment with `grouping-env.yml`)
 - `.csv` file containing a Pairing Score Matrix
 - `.txt` file containing the names of attendees that you want to put into groups
 
 **Run**
 
-1. Install the required libraries using `pip install -r requirements.txt`
-2. Run using `python main.py`
+- ***Pip***
+  - Install the required libraries: `pip install -r requirements.txt`
+- ***Anaconda***:
+  - Create the environment: `conda env create -f group-env.yml`
+  - Activate the new environment: `conda activate dinner-group`
+- Run the program with `python main.py`
 
 **Note:** Ensure that when prompted, you include the file extension as well (e.g. `.csv` or `.txt`), otherwise the program will reject the input. Sample data has been provided (`sample.csv`)
 
