@@ -2,5 +2,5 @@
 *.xlsx
 *.pdf
 *.md
-*.txt
+attendees.txt
 __pycache__/
