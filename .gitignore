@@ -1,6 +1,2 @@
-*.csv
-*.xlsx
-*.pdf
-*.md
-attendees.txt
 __pycache__/
+.DS_Store
