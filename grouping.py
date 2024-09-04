@@ -46,7 +46,7 @@ class GreedyGroupManager:
         if available_people:
             groups.append(available_people)
 
-        self._update_pairing_scores(groups)
+        # self._update_pairing_scores(groups)
         return groups
 
     def _add_new_attendees(self, new_attendees: List[str]):

@@ -1,28 +1,25 @@
-from datetime import datetime
 from grouping import GreedyGroupManager
+from generate import generate
 import file_input_util as fiu
+from datetime import datetime
+# User input. Enter 1 to Generate groups or 2 to update pairing scores.
 
-# User input to pass in pairing scores csv
-pairing_scores_file = input("Enter the pairing scores file ending in '.csv': ")
-fiu.pairing_score_file(pairing_scores_file)
+user_input = int(input("Enter 1 to Generate groups or 2 to update pairing scores: "))
+if user_input == 1:
+    generate()
 
-# Create instance of GreedyGroupManager class
-manager = GreedyGroupManager(pairing_scores_file=pairing_scores_file)
+elif user_input == 2:
+    pairing_scores_file = fiu.pairing_score_file()
 
-# Pass attendees txt file - get list of attendees for session
-attendees = fiu.attendees_file()
+    manager = GreedyGroupManager(pairing_scores_file=pairing_scores_file)
 
-# Set group size
-group_size = int(input("Enter the group size: "))
+    grouping_file = fiu.grouping_file()
 
-# Create groups
-print()
-groups = manager.create_groups(group_size=group_size, attendees=attendees)
-for i, group in enumerate(groups, 1):
-    print(f"Group {i}: {group}")
+    # Update pairing scores
+    manager.update_pairing_scores(grouping_file)
 
-# Save updated pairing scores
-timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-manager.save_pairing_scores(f"pairing_scores_{timestamp}.csv")
-print()
-print(f"Pairing scores saved to 'pairing_scores_{timestamp}.csv'")
+    # Save updated pairing scores
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    manager.save_pairing_scores(f"pairing_scores_{timestamp}.csv")
+    print()
+    print(f"Pairing scores saved to 'pairing_scores_{timestamp}.csv'")
