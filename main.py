@@ -1,33 +1,19 @@
 from datetime import datetime
 from grouping import GreedyGroupManager
+import file_input_util as fiu
 
 # User input to pass in pairing scores csv
-try:
-    pairing_scores_file = input("Enter the pairing scores file ending in '.csv': ")
-    if not pairing_scores_file.endswith('.csv'):
-        raise ValueError("File must be a csv file")
-    with open(pairing_scores_file, 'r') as file:
-        if not file.read():
-            raise ValueError("File is empty")
-except FileNotFoundError:
-    raise ValueError("File does not exist")
+pairing_scores_file = input("Enter the pairing scores file ending in '.csv': ")
+fiu.pairing_score_file(pairing_scores_file)
 
 # Create instance of GreedyGroupManager class
 manager = GreedyGroupManager(pairing_scores_file=pairing_scores_file)
 
 # Pass attendees txt file - get list of attendees for session
-try:
-    attendees_file = input("Enter the attendees file ending in '.txt': ")
-    with open(attendees_file, 'r') as file:
-        attendees = [line.strip() for line in file]  # Separates each line into a list item
-except FileNotFoundError:
-    raise ValueError("File does not exist")
+attendees = fiu.attendees_file()
 
 # Set group size
-try:
-    group_size = int(input("Enter the group size: "))
-except ValueError:
-    raise ValueError("Group size must be an integer")
+group_size = int(input("Enter the group size: "))
 
 # Create groups
 print()
