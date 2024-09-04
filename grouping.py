@@ -33,18 +33,18 @@ class GreedyGroupManager:
         filtered_scores = self.pairing_scores.loc[available_people, available_people]
 
         groups = []
+        num_full_groups = len(available_people) // group_size
 
-        while len(available_people) >= group_size:
+        # Form full-sized groups
+        for _ in range(num_full_groups):
             group = self._form_group_greedy(available_people, group_size, filtered_scores)
             groups.append(group)
             for person in group:
                 available_people.remove(person)
 
-        # Handle remaining people
+        # Handle the remaining people (if any)
         if available_people:
-            for person in available_people:
-                group_to_join = min(groups, key=lambda g: filtered_scores.loc[g, person].sum())
-                group_to_join.append(person)
+            groups.append(available_people)
 
         self._update_pairing_scores(groups)
         return groups
