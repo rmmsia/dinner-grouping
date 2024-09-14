@@ -1,3 +1,5 @@
+import csv
+
 def pairing_score_file():
     filename = input("Enter the pairing scores file ending in '.csv': ")
     if not filename.endswith('.csv'):
@@ -19,9 +21,15 @@ def attendees_file():
         raise ValueError("File does not exist")
     
 def grouping_file():
-    grouping_file = input("Enter the grouping file ending in '.txt': ")
-    with open(grouping_file, 'r') as file:
-        groups = [line.strip() for line in file]  # Separates each line into a list item
-        if not groups:
-            raise ValueError("File is empty")
-        return groups
+    grouping_file = input("Enter the grouping file ending in '.csv': ")
+    if not grouping_file.endswith('.csv'):
+        raise ValueError("File must be a csv file")
+
+    # Initialize an empty list to store the rows
+    list_of_lists = []
+
+    # Open the file and parse it
+    with open(grouping_file, mode='r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            list_of_lists.append(row)

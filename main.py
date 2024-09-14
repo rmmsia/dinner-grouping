@@ -1,10 +1,11 @@
 from grouping import GreedyGroupManager
 from generate import generate
-import file_input_util as fiu
 from datetime import datetime
+import file_input_util as fiu
 # User input. Enter 1 to Generate groups or 2 to update pairing scores.
 
 user_input = int(input("Enter 1 to Generate groups or 2 to update pairing scores: "))
+print()
 if user_input == 1:
     generate()
 
@@ -16,7 +17,7 @@ elif user_input == 2:
     grouping_file = fiu.grouping_file()
 
     # Update pairing scores
-    manager.update_pairing_scores(grouping_file)
+    manager._update_pairing_scores(grouping_file)
 
     # Save updated pairing scores
     timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")

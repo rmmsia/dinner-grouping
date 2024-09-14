@@ -39,8 +39,6 @@ class GreedyGroupManager:
         for _ in range(num_full_groups):
             group = self._form_group_greedy(available_people, group_size, filtered_scores)
             groups.append(group)
-            for person in group:
-                available_people.remove(person)
 
         # Handle the remaining people (if any)
         if available_people:
@@ -57,15 +55,35 @@ class GreedyGroupManager:
 
     # Greedy algorithm to form a group of attendees based on the pairing scores matrix
     def _form_group_greedy(self, available_people: List[str], group_size: int, filtered_scores: pd.DataFrame) -> List[str]:
-        first_person = min(available_people, key=lambda p: filtered_scores[p].sum())
-        group = [first_person]
+        group = []
 
         while len(group) < group_size:
-            next_person = min(
-                [p for p in available_people if p not in group],
-                key=lambda p: filtered_scores.loc[group, p].sum()
-            )
-            group.append(next_person)
+            best_person = None
+            best_score = float('inf')
+            
+            for person in available_people:
+                if person in group:
+                    continue
+                
+                # Check if adding this person violates any constraints
+                if any(filtered_scores.loc[other_person, person] == 99 for other_person in group):
+                    continue
+                
+                # Calculate the total score if this person is added to the group
+                score = filtered_scores.loc[group, person].sum()
+                
+                if score < best_score:
+                    best_score = score
+                    best_person = person
+            
+            if best_person is None:
+                # If no valid person is found, handle the situation (e.g., break or continue with remaining people)
+                break
+            
+            # Ensure best_person is in available_people before removal
+            if best_person in available_people:
+                group.append(best_person)
+                available_people.remove(best_person)
 
         return group
 
