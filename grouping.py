@@ -2,8 +2,9 @@ import pandas as pd
 import numpy as np
 from typing import List, Optional
 
+
 class GreedyGroupManager:
-    # Creates an instance of the GreedyGroupManager class, loading the pairing scores matrix
+    # Initialise group matrix
     def __init__(self, pairing_scores_file: Optional[str] = None):
         if pairing_scores_file:
             self.load_pairing_scores(pairing_scores_file)
@@ -16,12 +17,12 @@ class GreedyGroupManager:
             self.pairing_scores = pd.read_csv(filename, index_col=0)
         else:
             raise ValueError("Unsupported file format. Please use .csv")
-        
+
         self.people = list(self.pairing_scores.index)
         self.pairing_scores = self.pairing_scores.astype(float)
         np.fill_diagonal(self.pairing_scores.values, 0)
 
-    # Creates groups of attendees based on the pairing scores matrix by greedily selecting the best pairings
+    # Creates groups of attendees by greedily selecting the best pairings
     def create_groups(self, group_size: int, attendees: List[str]) -> List[List[str]]:
         # Add new attendees to the pairing scores matrix if they don't exist
         new_attendees = [a for a in attendees if a not in self.pairing_scores.index]
@@ -60,26 +61,25 @@ class GreedyGroupManager:
         while len(group) < group_size:
             best_person = None
             best_score = float('inf')
-            
+
             for person in available_people:
                 if person in group:
                     continue
-                
+
                 # Check if adding this person violates any constraints
                 if any(filtered_scores.loc[other_person, person] == 99 for other_person in group):
                     continue
-                
+
                 # Calculate the total score if this person is added to the group
                 score = filtered_scores.loc[group, person].sum()
-                
+
                 if score < best_score:
                     best_score = score
                     best_person = person
-            
+
             if best_person is None:
-                # If no valid person is found, handle the situation (e.g., break or continue with remaining people)
                 break
-            
+
             # Ensure best_person is in available_people before removal
             if best_person in available_people:
                 group.append(best_person)
