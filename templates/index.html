@@ -33,6 +33,7 @@
     </form>
     <h3>Groups:</h3>
     <pre id="feature1-output"></pre>
+    <a id="download-link" href="#" target="_blank" style="display: none;">Download Groups</a>
 
     <script>
         $(document).ready(function() {
@@ -45,12 +46,15 @@
                     data.groups.forEach(function(group, index) {
                         outputElement.append('Group ' + (index + 1) + ': ' + JSON.stringify(group) + "\n");
                     });
+                    $('#download-link').attr('href', data.download_url).show();
                 } else if (data.error) {
                     // If there's an error, display it
                     outputElement.text('Error: ' + data.error);
+                    $('#download-link').hide();
                 } else {
                     // Otherwise, display the raw data
                     outputElement.text('No groups to display');
+                    $('#download-link').hide();
                 }
             }
 
@@ -69,25 +73,7 @@
                     },
                     error: function(xhr, status, error) {
                         $('#feature1-output').text('An error occurred: ' + error);
-                    }
-                });
-            });
-
-            $('#feature2-form').on('submit', function(e) {
-                e.preventDefault();
-                var formData = new FormData(this);
-                formData.append('feature2', 'true');
-                $.ajax({
-                    url: '/',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        displayOutput('#feature2-output', response);
-                    },
-                    error: function(xhr, status, error) {
-                        $('#feature2-output').text('An error occurred: ' + error);
+                        $('#download-link').hide();
                     }
                 });
             });
