@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Processing App</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Grouping App</h1>
+
+    <h2>Assign Groups</h2>
+    <form id="feature1-form">
+        <label for="csv_file">Grouping Matrix (.csv):</label>
+        <input type="file" name="csv_file" accept=".csv" required>
+        <br>
+        <label for="txt_file">Attendees File (.txt):</label>
+        <input type="file" name="txt_file" accept=".txt" required>
+        <br>
+        <label for="integer_input">Group Size:</label>
+        <input type="number" name="integer_input" required>
+        <br>
+        <button type="submit">Generate Groups</button>
+    </form>
+    <div id="feature1-output"></div>
+
+    <h2>Update Pairing Scores</h2>
+    <form id="feature2-form">
+        <input type="file" name="file" accept=".csv" required>
+        <button type="submit">Update Score Matrix</button>
+    </form>
+    <div id="feature2-output"></div>
+
+    <script>
+        $(document).ready(function() {
+            $('#feature1-form').on('submit', function(e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+                formData.append('feature1', 'true');
+                $.ajax({
+                    url: '/',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('#feature1-output').text(response.output);
+                    }
+                });
+            });
+
+            $('#feature2-form').on('submit', function(e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+                formData.append('feature2', 'true');
+                $.ajax({
+                    url: '/',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('#feature2-output').text(response.output);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
