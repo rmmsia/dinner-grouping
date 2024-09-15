@@ -20,10 +20,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install pylint flake8
 
-    - name: Run pylint
-      run: |
-        pylint ../*.py  # Lint all Python files in the parent directory
-
     - name: Run flake8
       run: |
         flake8 ../*.py  # Run flake8 on all Python files in the parent directory
+
+    - name: Run pylint
+      run: |
+        pylint ../*.py  # Lint all Python files in the parent directory
