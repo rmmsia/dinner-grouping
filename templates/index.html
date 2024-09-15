@@ -5,16 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grouping App</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
     <h1>Grouping App</h1>
 
-    <h2>Assign Groups</h2>
+    <h2>Generate Groups</h2>
     <form id="feature1-form">
-        <label for="csv_file">Grouping Matrix (.csv):</label>
+        <label for="csv_file">Pairing Score Matrix (.csv):</label>
         <input type="file" name="csv_file" accept=".csv" required>
         <br>
-        <label for="txt_file">Attendees File (.txt):</label>
+        <label for="txt_file">Attendees (.txt):</label>
         <input type="file" name="txt_file" accept=".txt" required>
         <br>
         <label for="integer_input">Group Size:</label>
@@ -22,17 +31,29 @@
         <br>
         <button type="submit">Generate Groups</button>
     </form>
-    <div id="feature1-output"></div>
-
-    <h2>Update Pairing Scores</h2>
-    <form id="feature2-form">
-        <input type="file" name="file" accept=".csv" required>
-        <button type="submit">Update Score Matrix</button>
-    </form>
-    <div id="feature2-output"></div>
+    <h3>Groups:</h3>
+    <pre id="feature1-output"></pre>
 
     <script>
         $(document).ready(function() {
+            function displayOutput(outputId, data) {
+                let outputElement = $(outputId);
+                outputElement.empty();
+                
+                if (data.groups) {
+                    // If data contains 'groups', format and display each group
+                    data.groups.forEach(function(group, index) {
+                        outputElement.append('Group ' + (index + 1) + ': ' + JSON.stringify(group) + "\n");
+                    });
+                } else if (data.error) {
+                    // If there's an error, display it
+                    outputElement.text('Error: ' + data.error);
+                } else {
+                    // Otherwise, display the raw data
+                    outputElement.text('No groups to display');
+                }
+            }
+
             $('#feature1-form').on('submit', function(e) {
                 e.preventDefault();
                 var formData = new FormData(this);
@@ -44,7 +65,10 @@
                     processData: false,
                     contentType: false,
                     success: function(response) {
-                        $('#feature1-output').text(response.output);
+                        displayOutput('#feature1-output', response);
+                    },
+                    error: function(xhr, status, error) {
+                        $('#feature1-output').text('An error occurred: ' + error);
                     }
                 });
             });
@@ -60,7 +84,10 @@
                     processData: false,
                     contentType: false,
                     success: function(response) {
-                        $('#feature2-output').text(response.output);
+                        displayOutput('#feature2-output', response);
+                    },
+                    error: function(xhr, status, error) {
+                        $('#feature2-output').text('An error occurred: ' + error);
                     }
                 });
             });

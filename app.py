@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import os
-import subprocess
-import json
+from generate import generate
+from grouping import GreedyGroupManager
 
 app = Flask(__name__)
 
@@ -24,29 +24,13 @@ def index():
             csv_file.save(csv_filename)
             txt_file.save(txt_filename)
             
-            # Call the external Python script for feature 1
-            result = subprocess.run(['python', 'feature1_script.py', csv_filename, txt_filename, integer_input], capture_output=True, text=True)
-            
-            # Parse the output as JSON if possible, otherwise return as is
+            # Call the generate function directly
             try:
-                output = json.loads(result.stdout)
-            except json.JSONDecodeError:
-                output = result.stdout.strip()
-            
-            return jsonify({'output': output})
-        
-        elif 'feature2' in request.form:
-            file = request.files['file']
-            
-            # Save the uploaded file
-            filename = os.path.join(UPLOAD_FOLDER, file.filename)
-            file.save(filename)
-            
-            # Call the external Python script for feature 2
-            result = subprocess.run(['python', 'feature2_script.py', filename], capture_output=True, text=True)
-            
-            # Return the output from the script
-            return jsonify({'output': result.stdout})
+                groups = generate(csv_filename, txt_filename, int(integer_input))
+                return jsonify({'groups': groups})
+            except Exception as e:
+                print(f"Error: {e}")
+                return jsonify({'error': str(e)}), 500
     
     return render_template('index.html')
 
