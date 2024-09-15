@@ -16,13 +16,16 @@
 - ***Anaconda***:
   - Create the environment: `conda env create -f group-env.yml`
   - Activate the new environment: `conda activate dinner-group`
-- Run the program with `python main.py`
+
+- Run the program with `python app.py`
 
 **Note:** Ensure that when prompted, you include the file extension as well (e.g. `.csv` or `.txt`), otherwise the program will reject the input. Sample data has been provided (`sample.csv`)
 
 ## Description
 
-This is a greedy algorithm that uses a 'pairing score' system to choose members from a list of attendees based on how low their pairing scores with every other member in the group are.
+This web application generates groups from a list of attendees by using historical grouping data to minimise instances of people being grouped with others they have been grouped with before. Best used for groups who meet regularly, and attendees can vary.
+
+It uses a greedy algorithm that uses a 'pairing score' system to choose members from a list of attendees based on how low their pairing scores with every other member in the group are.
 
 A **pairing score** of two people is the number of times these two people have been in the same group together in the past. For example, if Alice and Bob have been assigned to the same dinner group for five previous sessions, then their pairing score would be 5.
 
