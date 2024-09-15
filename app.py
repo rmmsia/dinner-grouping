@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import os
 import subprocess
+import json
 
 app = Flask(__name__)
 
@@ -12,7 +13,6 @@ if not os.path.exists(UPLOAD_FOLDER):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        # Check which feature was requested
         if 'feature1' in request.form:
             csv_file = request.files['csv_file']
             txt_file = request.files['txt_file']
@@ -27,8 +27,13 @@ def index():
             # Call the external Python script for feature 1
             result = subprocess.run(['python', 'feature1_script.py', csv_filename, txt_filename, integer_input], capture_output=True, text=True)
             
-            # Return the output from the script
-            return jsonify({'output': result.stdout})
+            # Parse the output as JSON if possible, otherwise return as is
+            try:
+                output = json.loads(result.stdout)
+            except json.JSONDecodeError:
+                output = result.stdout.strip()
+            
+            return jsonify({'output': output})
         
         elif 'feature2' in request.form:
             file = request.files['file']
