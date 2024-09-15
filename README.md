@@ -19,11 +19,11 @@
 
 - Run the program with `python app.py`
 
-**Note:** Ensure that when prompted, you include the file extension as well (e.g. `.csv` or `.txt`), otherwise the program will reject the input. Sample data has been provided (`sample.csv`)
+**Note:** Sample data has been provided (`sample.csv` and `attendees.txt`)
 
 ## Description
 
-This web application generates groups from a list of attendees by using historical grouping data to minimise instances of people being grouped with others they have been grouped with before. Best used for groups who meet regularly, and attendees can vary.
+This web application generates groups from a list of attendees by using historical grouping data to minimise instances of people being grouped with others they have been grouped with before. Best used for groups who meet regularly, and whose attendees may vary.
 
 It uses a greedy algorithm that uses a 'pairing score' system to choose members from a list of attendees based on how low their pairing scores with every other member in the group are.
 
