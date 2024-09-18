@@ -94,6 +94,13 @@ class GreedyGroupManager:
                     self.pairing_scores.at[person1, person2] += 1
                     self.pairing_scores.at[person2, person1] += 1
 
+    def _patch_pairing_scores(self, groups: List[List[str]]):
+        for group in groups:
+            for i, person1 in enumerate(group):
+                for person2 in group[i+1:]:
+                    self.pairing_scores.at[person1, person2] = 99
+                    self.pairing_scores.at[person2, person1] = 99
+
     def save_pairing_scores(self, filename: str):
         # Convert to integers before saving
         integer_scores = self.pairing_scores.astype(int)

@@ -33,28 +33,56 @@
     </form>
     <h3>Groups:</h3>
     <pre id="feature1-output"></pre>
-    <a id="download-link" href="#" target="_blank" style="display: none;">Download Groups</a>
+    <a id="view-link-1" href="#" target="_blank" style="display: none;">Download Groups</a>
 
+    <h2>Patch Matrix File</h2>
+    <p>Use this to patch a pairing score matrix file such that it edits sets each group member's pairing score to 99, guaranteeing these people will not be grouped together.</p>
+    <p>Use before generating groupings</p>
+    <form id="feature2-form">
+        <label for="csv_file2">Pairing Score Matrix (.csv):</label>
+        <input type="file" name="csv_file2" accept=".csv" required>
+        <br>
+        <label for="txt_file2">Groups of People to Avoid Grouping (.txt):</label>
+        <input type="file" name="txt_file2" accept=".txt" required>
+        <br>
+        <button type="submit">Patch Matrix</button>
+    </form>
+    <h3>Result:</h3>
+    <pre id="feature2-output"></pre>
+    <a id="download-link-2" href="#" target="_blank" style="display: none;">Download Processed CSV</a>
+    
     <script>
         $(document).ready(function() {
-            function displayOutput(outputId, data) {
+            function displayOutput(outputId, data, linkId) {
                 let outputElement = $(outputId);
                 outputElement.empty();
-                
                 if (data.groups) {
-                    // If data contains 'groups', format and display each group
+                    // Feature 1 output
                     data.groups.forEach(function(group, index) {
                         outputElement.append('Group ' + (index + 1) + ': ' + JSON.stringify(group) + "\n");
                     });
-                    $('#download-link').attr('href', data.download_url).show();
+                } else if (data.message) {
+                    // Feature 2 output
+                    outputElement.text(data.message);
                 } else if (data.error) {
-                    // If there's an error, display it
+                    // Error output
                     outputElement.text('Error: ' + data.error);
-                    $('#download-link').hide();
+                    $(linkId).hide();
+                    return;
                 } else {
-                    // Otherwise, display the raw data
-                    outputElement.text('No groups to display');
-                    $('#download-link').hide();
+                    // Default output
+                    outputElement.text('No data to display');
+                    $(linkId).hide();
+                    return;
+                }
+                
+                // Update link
+                if (data.content_url) {
+                    $(linkId).attr('href', data.content_url).show();
+                } else if (data.download_url) {
+                    $(linkId).attr('href', data.download_url).show();
+                } else {
+                    $(linkId).hide();
                 }
             }
 
@@ -69,11 +97,31 @@
                     processData: false,
                     contentType: false,
                     success: function(response) {
-                        displayOutput('#feature1-output', response);
+                        displayOutput('#feature1-output', response, '#view-link-1');
                     },
                     error: function(xhr, status, error) {
                         $('#feature1-output').text('An error occurred: ' + error);
-                        $('#download-link').hide();
+                        $('#view-link-1').hide();
+                    }
+                });
+            });
+
+            $('#feature2-form').on('submit', function(e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+                formData.append('feature2', 'true');
+                $.ajax({
+                    url: '/',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        displayOutput('#feature2-output', response, '#download-link-2');
+                    },
+                    error: function(xhr, status, error) {
+                        $('#feature2-output').text('An error occurred: ' + error);
+                        $('#download-link-2').hide();
                     }
                 });
             });
