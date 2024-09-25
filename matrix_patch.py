@@ -21,7 +21,19 @@ def patch_matrix(csv_path, txt_path, patch_value):
 
     # Patch the matrix scores (using _patch_pairing_scores method)
     group_manager._patch_pairing_scores(groups, float(patch_value))
-    group_manager.pairing_scores.astype(int)
+    group_manager.pairing_scores = group_manager.pairing_scores.astype(int)
 
     # return the dataframe
+    return group_manager.pairing_scores
+
+def update_matrix(csv_path, txt_path):
+    group_manager = GreedyGroupManager(pairing_scores_file=csv_path)
+    groups = parse_groups(txt_path)
+
+    # Update the matrix scores (using _update_pairing_scores method)
+    group_manager._update_pairing_scores(groups)
+    print(group_manager.pairing_scores)
+    group_manager.pairing_scores = group_manager.pairing_scores.astype(int)
+
+    # Return the dataframe
     return group_manager.pairing_scores

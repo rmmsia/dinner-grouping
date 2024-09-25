@@ -128,6 +128,39 @@ def index():
             except Exception as e:
                 print(f"Error: {e}")
                 return jsonify({'error': str(e)}), 500
+            
+        elif 'feature3' in request.form:
+            csv_file = request.files['csv_file3']
+            txt_file = request.files['txt_file3']
+
+            # Save the uploaded files
+            csv_path = os.path.join(UPLOAD_FOLDER, csv_file.filename)
+            txt_path = os.path.join(UPLOAD_FOLDER, txt_file.filename)
+            csv_file.save(csv_path)
+            txt_file.save(txt_path)
+
+            try:
+                # Process the files and create a DataFrame
+                # Note: You may want to create a new function in matrix_patch.py for this feature
+                df = matrix_patch.update_matrix(csv_path, txt_path)
+
+                # Save the DataFrame as a CSV file in the downloads folder
+                output_file = f'{os.path.basename(csv_path)}_updated.csv'
+                output_path = os.path.join(DOWNLOAD_FOLDER, output_file)
+                df.to_csv(output_path, index=True)
+
+                file_creation_times[output_file] = datetime.now()
+
+                # Clear uploads folder
+                clear_upload_folder()
+
+                return jsonify({
+                    'message': 'Matrix updated successfully',
+                    'download_url': f'/download/{output_file}'
+                })
+            except Exception as e:
+                print(f"Error: {e}")
+                return jsonify({'error': str(e)}), 500
 
     return render_template('index.html')
 
