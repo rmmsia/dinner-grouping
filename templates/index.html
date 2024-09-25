@@ -36,14 +36,17 @@
     <a id="view-link-1" href="#" target="_blank" style="display: none;">Download Groups</a>
 
     <h2>Patch Matrix File</h2>
-    <p>Use this to patch a pairing score matrix file such that it edits sets each group member's pairing score to 99, guaranteeing these people will not be grouped together.</p>
-    <p>Use before generating groupings</p>
+    <p>Use this to patch a pairing score matrix file to manually set the pairing scores within a group of people.</p>
+    <p>This can be used to reset scores between a pair or group of people to 0, or to discourage groupings by setting a higher pairing score.</p>
     <form id="feature2-form">
         <label for="csv_file2">Pairing Score Matrix (.csv):</label>
         <input type="file" name="csv_file2" accept=".csv" required>
         <br>
-        <label for="txt_file2">Groups of People to Avoid Grouping (.txt):</label>
+        <label for="txt_file2">Groups of People to Patch (.txt):</label>
         <input type="file" name="txt_file2" accept=".txt" required>
+        <br>
+        <label for="integer_input">Score to Apply:</label>
+        <input type="number" name="patch_score" required>
         <br>
         <button type="submit">Patch Matrix</button>
     </form>

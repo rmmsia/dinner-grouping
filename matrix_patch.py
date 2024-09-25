@@ -14,13 +14,13 @@ def parse_groups(filename):
     return list_of_lists
 
 
-def patch_matrix(csv_path, txt_path):
+def patch_matrix(csv_path, txt_path, patch_value):
     # Initialise the GreedyGroupManager with the pairing scores matrix
     group_manager = GreedyGroupManager(pairing_scores_file=csv_path)
     groups = parse_groups(txt_path)
 
     # Patch the matrix scores (using _patch_pairing_scores method)
-    group_manager._patch_pairing_scores(groups)
+    group_manager._patch_pairing_scores(groups, float(patch_value))
     group_manager.pairing_scores.astype(int)
 
     # return the dataframe

@@ -99,6 +99,7 @@ def index():
         elif 'feature2' in request.form:
             csv_file = request.files['csv_file2']
             txt_file = request.files['txt_file2']
+            patch_value = request.form['patch_score']
 
             # Save the uploaded files
             csv_path = os.path.join(UPLOAD_FOLDER, csv_file.filename)
@@ -108,10 +109,10 @@ def index():
 
             try:
                 # Process the files and create a DataFrame
-                df = matrix_patch.patch_matrix(csv_path, txt_path)
+                df = matrix_patch.patch_matrix(csv_path, txt_path, patch_value)
 
                 # Save the DataFrame as a CSV file in the downloads folder
-                output_file = f'{csv_path}_patched.csv'
+                output_file = f'{os.path.basename(csv_path)}_patched.csv'
                 output_path = os.path.join(DOWNLOAD_FOLDER, output_file)
                 df.to_csv(output_path, index=True)
 
