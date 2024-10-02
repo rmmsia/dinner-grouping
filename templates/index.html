@@ -1,75 +1,100 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Grouping App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        .feature-section {
+            margin-bottom: 3rem;
+        }
         pre {
             white-space: pre-wrap;
             word-wrap: break-word;
-            background-color: #f0f0f0;
-            padding: 10px;
-            border-radius: 5px;
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.25rem;
         }
     </style>
-</head>
-<body>
-    <h1>Grouping App</h1>
+  </head>
+  <body>
+    <div class="container">
+        <h1 class="mb-4">Grouping App</h1>
 
-    <h2>Generate Groups</h2>
-    <form id="feature1-form">
-        <label for="csv_file">Pairing Score Matrix (.csv):</label>
-        <input type="file" name="csv_file" accept=".csv" required>
-        <br>
-        <label for="txt_file">Attendees (.txt):</label>
-        <input type="file" name="txt_file" accept=".txt" required>
-        <br>
-        <label for="integer_input">Group Size:</label>
-        <input type="number" name="integer_input" required>
-        <br>
-        <button type="submit">Generate Groups</button>
-    </form>
-    <h3>Groups:</h3>
-    <pre id="feature1-output"></pre>
-    <a id="view-link-1" href="#" target="_blank" style="display: none;">Download Groups</a>
+        <div class="feature-section">
+            <h2>Generate Groups</h2>
+            <form id="feature1-form" class="mb-3">
+                <div class="mb-3">
+                    <label for="csv_file" class="form-label">Pairing Score Matrix (.csv):</label>
+                    <input type="file" class="form-control" name="csv_file" accept=".csv" required>
+                </div>
+                <div class="mb-3">
+                    <label for="txt_file" class="form-label">Attendees (.txt):</label>
+                    <input type="file" class="form-control" name="txt_file" accept=".txt" required>
+                </div>
+                <div class="mb-3">
+                    <label for="integer_input" class="form-label">Group Size:</label>
+                    <input type="number" class="form-control" name="integer_input" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Generate Groups</button>
+            </form>
+            <h3>Groups:</h3>
+            <pre id="feature1-output" class="mt-3"></pre>
+            <a id="view-link-1" href="#" target="_blank" class="btn btn-secondary mt-2" style="display: none;">Download Groups</a>
+        </div>
 
-    <h2>Patch Matrix File</h2>
-    <p>Use this to patch a pairing score matrix file to manually set the pairing scores within a group of people.</p>
-    <p>This can be used to reset scores between a pair or group of people to 0, or to discourage groupings by setting a higher pairing score.</p>
-    <form id="feature2-form">
-        <label for="csv_file2">Pairing Score Matrix (.csv):</label>
-        <input type="file" name="csv_file2" accept=".csv" required>
-        <br>
-        <label for="txt_file2">Groups of People to Patch (.txt):</label>
-        <input type="file" name="txt_file2" accept=".txt" required>
-        <br>
-        <label for="integer_input">Score to Apply:</label>
-        <input type="number" name="patch_score" required>
-        <br>
-        <button type="submit">Patch Matrix</button>
-    </form>
-    <h3>Result:</h3>
-    <pre id="feature2-output"></pre>
-    <a id="download-link-2" href="#" target="_blank" style="display: none;">Download Processed CSV</a>
-    
-    <h2>Feature 3: Update Matrix</h2>
-    <p>When groupings are finalised, use this feature to increment pairing score by 1.</p>
-    <p>You can use the .txt file generated in the Grouping feature, or a different grouping file.</p>
-    <form id="feature3-form">
-        <label for="csv_file3">Pairing Score Matrix (.csv):</label>
-        <input type="file" name="csv_file3" accept=".csv" required>
-        <br>
-        <label for="txt_file3">Groupings (.txt):</label>
-        <input type="file" name="txt_file3" accept=".txt" required>
-        <br>
-        <button type="submit">Update Matrix</button>
-    </form>
-    <h3>Result:</h3>
-    <pre id="feature3-output"></pre>
-    <a id="download-link-3" href="#" target="_blank" style="display: none;">Download Processed CSV</a>
-    
+        <div class="feature-section">
+            <h2>Patch Matrix File</h2>
+            <p>Use this to patch a pairing score matrix file to manually set the pairing scores within a group of people.</p>
+            <p>This can be used to reset scores between a pair or group of people to 0, or to discourage groupings by setting a higher pairing score.</p>
+            <form id="feature2-form" class="mb-3">
+                <div class="mb-3">
+                    <label for="csv_file2" class="form-label">Pairing Score Matrix (.csv):</label>
+                    <input type="file" class="form-control" name="csv_file2" accept=".csv" required>
+                </div>
+                <div class="mb-3">
+                    <label for="txt_file2" class="form-label">Groups of People to Patch (.txt):</label>
+                    <input type="file" class="form-control" name="txt_file2" accept=".txt" required>
+                </div>
+                <div class="mb-3">
+                    <label for="patch_score" class="form-label">Score to Apply:</label>
+                    <input type="number" class="form-control" name="patch_score" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Patch Matrix</button>
+            </form>
+            <h3>Result:</h3>
+            <pre id="feature2-output" class="mt-3"></pre>
+            <a id="download-link-2" href="#" target="_blank" class="btn btn-secondary mt-2" style="display: none;">Download Processed CSV</a>
+        </div>
+
+        <div class="feature-section">
+            <h2>Update Matrix</h2>
+            <p>When groupings are finalised, use this feature to increment pairing score by 1.</p>
+            <p>You can use the .txt file generated in the Grouping feature, or a different grouping file.</p>
+            <form id="feature3-form" class="mb-3">
+                <div class="mb-3">
+                    <label for="csv_file3" class="form-label">Pairing Score Matrix (.csv):</label>
+                    <input type="file" class="form-control" name="csv_file3" accept=".csv" required>
+                </div>
+                <div class="mb-3">
+                    <label for="txt_file3" class="form-label">Groupings (.txt):</label>
+                    <input type="file" class="form-control" name="txt_file3" accept=".txt" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Matrix</button>
+            </form>
+            <h3>Result:</h3>
+            <pre id="feature3-output" class="mt-3"></pre>
+            <a id="download-link-3" href="#" target="_blank" class="btn btn-secondary mt-2" style="display: none;">Download Processed CSV</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
         $(document).ready(function() {
             function displayOutput(outputId, data, linkId) {
@@ -105,10 +130,11 @@
                 }
             }
 
-            $('#feature1-form').on('submit', function(e) {
+            $('#feature1-form, #feature2-form, #feature3-form').on('submit', function(e) {
                 e.preventDefault();
                 var formData = new FormData(this);
-                formData.append('feature1', 'true');
+                var featureNumber = this.id.charAt(7);
+                formData.append('feature' + featureNumber, 'true');
                 $.ajax({
                     url: '/',
                     type: 'POST',
@@ -116,55 +142,15 @@
                     processData: false,
                     contentType: false,
                     success: function(response) {
-                        displayOutput('#feature1-output', response, '#view-link-1');
+                        displayOutput('#feature' + featureNumber + '-output', response, '#' + (featureNumber === '1' ? 'view' : 'download') + '-link-' + featureNumber);
                     },
                     error: function(xhr, status, error) {
-                        $('#feature1-output').text('An error occurred: ' + error);
-                        $('#view-link-1').hide();
-                    }
-                });
-            });
-
-            $('#feature2-form').on('submit', function(e) {
-                e.preventDefault();
-                var formData = new FormData(this);
-                formData.append('feature2', 'true');
-                $.ajax({
-                    url: '/',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        displayOutput('#feature2-output', response, '#download-link-2');
-                    },
-                    error: function(xhr, status, error) {
-                        $('#feature2-output').text('An error occurred: ' + error);
-                        $('#download-link-2').hide();
-                    }
-                });
-            });
-
-            $('#feature3-form').on('submit', function(e) {
-                e.preventDefault();
-                var formData = new FormData(this);
-                formData.append('feature3', 'true');
-                $.ajax({
-                    url: '/',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        displayOutput('#feature3-output', response, '#download-link-3');
-                    },
-                    error: function(xhr, status, error) {
-                        $('#feature3-output').text('An error occurred: ' + error);
-                        $('#download-link-3').hide();
+                        $('#feature' + featureNumber + '-output').text('An error occurred: ' + error);
+                        $('#' + (featureNumber === '1' ? 'view' : 'download') + '-link-' + featureNumber).hide();
                     }
                 });
             });
         });
     </script>
-</body>
+  </body>
 </html>
