@@ -17,7 +17,7 @@
   - Create the environment: `conda env create -f group-env.yml`
   - Activate the new environment: `conda activate dinner-group`
 
-- Run the program with `python app.py`
+- Run the program with `python src/app.py`
 
 **Note:** Sample data has been provided (`sample.csv` and `attendees.txt`)
 

@@ -6,11 +6,13 @@ import shutil
 from datetime import datetime, timedelta
 import threading
 
-app = Flask(__name__)
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../templates'))
+
+app = Flask(__name__, template_folder=ROOT_DIR)
 
 # Ensure the uploads and downloads directories exist
-UPLOAD_FOLDER = 'uploads'
-DOWNLOAD_FOLDER = 'downloads'
+UPLOAD_FOLDER = os.path.join(ROOT_DIR, 'uploads')
+DOWNLOAD_FOLDER = os.path.join(ROOT_DIR, 'downloads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 if not os.path.exists(DOWNLOAD_FOLDER):
@@ -171,4 +173,9 @@ def download_file(filename):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    try:
+        print(f"Template folder is set to: {ROOT_DIR}")
+        print(f"Looking for index.html in: {os.path.join(ROOT_DIR, 'index.html')}")
+        app.run(debug=True)
+    except Exception as e:
+        print(f"Error starting the application: {e}")
