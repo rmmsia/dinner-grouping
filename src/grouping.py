@@ -22,7 +22,7 @@ class GreedyGroupManager:
         self.pairing_scores = self.pairing_scores.astype(float)
         np.fill_diagonal(self.pairing_scores.values, 0)
 
-    # Creates groups of attendees by greedily selecting the best pairings
+    # Creates groups of attendees by greedily selecting the best pairings (FULLY AUTOMATED)
     def create_groups(self, group_size: int, attendees: List[str]) -> List[List[str]]:
         # Add new attendees to the pairing scores matrix if they don't exist
         new_attendees = [a for a in attendees if a not in self.pairing_scores.index]

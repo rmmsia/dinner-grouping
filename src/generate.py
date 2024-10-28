@@ -6,7 +6,7 @@ def generate(pairing_scores_file: str, attendees_file: str, group_size: int):
     # Create instance of GreedyGroupManager class
     manager = GreedyGroupManager(pairing_scores_file=pairing_scores_file)
 
-    # Parse attendees
+    # Parse attendees into a line-separated list
     with open(attendees_file, 'r') as file:
         attendees = [line.strip() for line in file]
 

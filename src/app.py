@@ -60,6 +60,19 @@ cleanup_thread = threading.Thread(target=delayed_file_cleanup, daemon=True)
 cleanup_thread.start()
 
 
+'''
+INFO:
+feature1: Generate groups (based on matrix.csv and attendees.txt)
+    output: groups.txt
+
+feature2: Patch matrix (change values to a specific value)
+    output: matrix_patched.csv
+
+feature3: Update matrix (increment values by 1 based on final groupings)
+    output: matrix_updated.csv
+'''
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
