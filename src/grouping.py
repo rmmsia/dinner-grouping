@@ -17,6 +17,10 @@ class GreedyGroupManager:
             self.pairing_scores = pd.read_csv(filename, index_col=0)
         else:
             raise ValueError("Unsupported file format. Please use .csv")
+        
+        # Verify dataframe integrity
+        # if not self.verify_dataframe_integrity():
+        #     raise ValueError("Pairing scores matrix is not symmetric")
 
         self.people = list(self.pairing_scores.index)
         self.pairing_scores = self.pairing_scores.astype(float)
@@ -109,3 +113,8 @@ class GreedyGroupManager:
     def print_pairing_scores(self):
         # Print as integers for cleaner output
         print(self.pairing_scores.astype(int))
+    
+    def verify_dataframe_integrity(self):
+        # Check if the pairing scores matrix is symmetric
+        symmetric = self.pairing_scores.equals(self.pairing_scores.T)
+        return symmetric

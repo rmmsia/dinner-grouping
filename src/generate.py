@@ -9,6 +9,7 @@ def generate(pairing_scores_file: str, attendees_file: str, group_size: int):
     # Parse attendees
     with open(attendees_file, 'r') as file:
         attendees = [line.strip() for line in file]
+        attendees = [attendee.lower() for attendee in attendees]
 
     # Create groups
     print()
