@@ -99,33 +99,53 @@ def update_pairing_scores(groups, matrix):
     return matrix
 
 
-if __name__ == '__main__':
+'''
+Main workflow takes in the following inputs:
+- pairing_scores_csv (str): path to the CSV file containing historical pairing scores
+- attendees_csv (str): path to the CSV file containing attendee information
+- weights (List[float]): list containing the weights of gender, year and faculty respectively
+- group_size (int): size of each group
+
+Returns:
+- groups (List[List[Attendee]]): list of groups, where each group is a list of Attendee objects
+'''
+
+def main_workflow(pairing_scores_csv, attendees_csv, weights_list, group_size):
     # Load attendees
-    attendees_df = pd.read_csv('.csv')
+    attendees_df = pd.read_csv(attendees_csv)
     attendees_df.set_index('Name', drop=False, inplace=True)
 
     attendees = {
         row['Name']: Attendee(row['Name'], row['Gender'], row['Telegram ID'], row['Email'], row['Year'], row['Faculty'])
         for _, row in attendees_df.iterrows()
     }
-    attendees = {attendee.name: attendee for attendee in attendees.values()}
+    attendees = {attendee.name: attendee for attendee in attendees.values()} # key is name, value is Attendee object
 
     # Load historical pairing scores
     try:
-        pairing_scores = load_pairing_score_matrix('.csv')
+        pairing_scores = load_pairing_score_matrix(pairing_scores_csv)
     except FileNotFoundError:
         attendee_names = list(attendees.keys())
         pairing_scores = pd.DataFrame(0, index=attendee_names, columns=attendee_names)
     
     weights = {
-        'gender': 0.0,
-        'year': 0.0,
-        'faculty': 1.0
+        'gender': weights_list[0],
+        'year': weights_list[1],
+        'faculty': weights_list[2]
     }
 
-    group_size = 5
     groups = assign_groups(attendees, group_size, pairing_scores, weights)
 
+    return groups
+
+'''
+print_groups - print the groups and pairing scores within each group
+Input:
+- groups (List[List[Attendee]]): list of groups, where each group is a list of Attendee objects
+- pairing_scores (pd.DataFrame): DataFrame containing pairing scores between attendees
+'''
+
+def print_groups(groups, pairing_scores):
     for i, group in enumerate(groups, start=1):
         members = [member.name for member in group]
         print(f'Group {i}: {', '.join(members)}')
