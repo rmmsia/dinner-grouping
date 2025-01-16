@@ -1,23 +1,20 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
-from generate import generate
-import matrix_patch
+from algo_v2 import main_workflow, groups_to_dataframe
 import os
 import shutil
-from datetime import datetime, timedelta
 import threading
+from datetime import datetime, timedelta
 
-app = Flask(__name__)
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+app = Flask(__name__, template_folder=ROOT_DIR)
 
-# Ensure the uploads and downloads directories exist
-UPLOAD_FOLDER = 'uploads'
-DOWNLOAD_FOLDER = 'downloads'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-if not os.path.exists(DOWNLOAD_FOLDER):
-    os.makedirs(DOWNLOAD_FOLDER)
-
-# Dictionary to store file creation times
 file_creation_times = {}
+
+UPLOAD_FOLDER = os.path.join(ROOT_DIR, 'uploads')
+DOWNLOAD_FOLDER = os.path.join(ROOT_DIR, 'downloads')
+for folder in [UPLOAD_FOLDER, DOWNLOAD_FOLDER]:
+    if not os.path.exists(folder):
+        os.makedirs(folder)
 
 
 def clear_upload_folder():
@@ -50,7 +47,7 @@ def delayed_file_cleanup():
             del file_creation_times[filename]
 
         # Run every 2 minutes
-        threading.Event().wait(120)
+        threading.Event().wait(30)
 
 
 # Start the cleanup thread
@@ -61,106 +58,88 @@ cleanup_thread.start()
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        if 'feature1' in request.form:
+        try:
+            # Add debug prints
+            print("Form data:", request.form)
+            print("Files:", request.files)
+
+            # Check if files are empty using the correct field names
+            if 'csv_file' not in request.files or request.files['csv_file'].filename == '':
+                return jsonify({'error': 'CSV file is required'}), 400
+            if 'attendees_file' not in request.files or request.files['attendees_file'].filename == '':
+                return jsonify({'error': 'Attendees file is required'}), 400
+
             csv_file = request.files['csv_file']
-            txt_file = request.files['txt_file']
+            attendees_file = request.files['attendees_file']  # Updated field name
+
+            # Check for group size
+            if not request.form.get('integer_input'):
+                return jsonify({'error': 'Group size is required'}), 400
+
             grp_size = request.form['integer_input']
 
-            # Save the uploaded files
-            matrix = os.path.join(UPLOAD_FOLDER, csv_file.filename)
-            attendees = os.path.join(UPLOAD_FOLDER, txt_file.filename)
+            # Check for factors
+            required_factors = ['factor1', 'factor2', 'factor3']
+            if not all(factor in request.form for factor in required_factors):
+                return jsonify({'error': 'All weight factors are required'}), 400
+
+            # Get slider values
+            try:
+                factors = [
+                    float(request.form['factor1']),
+                    float(request.form['factor2']),
+                    float(request.form['factor3'])
+                ]
+            except ValueError:
+                return jsonify({'error': 'Invalid weight factor values'}), 400
+
+            # Validate factors sum to 1.0
+            if abs(sum(factors) - 1.0) > 0.01:
+                return jsonify({'error': 'Weight factors must sum to 1.0'}), 400
+
+            print("Files and inputs validated successfully")
+
+            # Save uploaded files with unique names to prevent conflicts
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            matrix_filename = f'matrix_{timestamp}_{csv_file.filename}'
+            attendees_filename = f'attendees_{timestamp}_{attendees_file.filename}'
+
+            matrix = os.path.join(UPLOAD_FOLDER, matrix_filename)
+            attendees = os.path.join(UPLOAD_FOLDER, attendees_filename)
+
             csv_file.save(matrix)
-            txt_file.save(attendees)
+            attendees_file.save(attendees)
 
-            try:
-                groups = generate(matrix, attendees, int(grp_size))
-                # Create a .txt file with groups in the downloads folder
-                output_file = f'groups_{datetime.now().strftime("%Y%m%d%H%M%S")}.txt'
-                output_path = os.path.join(DOWNLOAD_FOLDER, output_file)
-                with open(output_path, 'w') as f:
-                    for idx, group in enumerate(groups, start=1):
-                        f.write(f"Group {idx}:\n")
-                        for member in group:
-                            f.write(f"{member}\n")
-                        f.write("\n")
-                file_creation_times[output_file] = datetime.now()
+            print("Files saved successfully")
 
-                # Clear uploads folder
-                clear_upload_folder()
+            # Generate groups
+            groups = main_workflow(matrix, attendees, factors, int(grp_size))
 
-                return jsonify({
-                    'groups': groups,
-                    'download_url': f'/download/{output_file}'
-                })
-            except Exception as e:
-                print(f"Error: {e}")
-                return jsonify({'error': str(e)}), 500
+            # Create DataFrame with groups for output
+            df = groups_to_dataframe(groups)
+            output_file = f'groups_{timestamp}.csv'
+            output_path = os.path.join(DOWNLOAD_FOLDER, output_file)
+            df.to_csv(output_path, index=True)
+            file_creation_times[output_file] = datetime.now()
 
-        elif 'feature2' in request.form:
-            csv_file = request.files['csv_file2']
-            txt_file = request.files['txt_file2']
-            patch_value = request.form['patch_score']
+            # Clean up uploaded files
+            for file_path in [matrix, attendees]:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
 
-            # Save the uploaded files
-            csv_path = os.path.join(UPLOAD_FOLDER, csv_file.filename)
-            txt_path = os.path.join(UPLOAD_FOLDER, txt_file.filename)
-            csv_file.save(csv_path)
-            txt_file.save(txt_path)
+            # Convert groups to list of lists of names
+            groups = [[member.name for member in group] for group in groups]
 
-            try:
-                # Process the files and create a DataFrame
-                df = matrix_patch.patch_matrix(csv_path, txt_path, patch_value)
+            clear_upload_folder()
 
-                # Save the DataFrame as a CSV file in the downloads folder
-                output_file = f'{os.path.basename(csv_path)}_patched.csv'
-                output_path = os.path.join(DOWNLOAD_FOLDER, output_file)
-                df.to_csv(output_path, index=True)
+            return jsonify({
+                'groups': groups,
+                'download_url': f'/download/{output_file}'
+            })
 
-                file_creation_times[output_file] = datetime.now()
-
-                # Clear uploads folder
-                clear_upload_folder()
-
-                return jsonify({
-                    'message': 'File processed successfully',
-                    'download_url': f'/download/{output_file}'
-                })
-            except Exception as e:
-                print(f"Error: {e}")
-                return jsonify({'error': str(e)}), 500
-            
-        elif 'feature3' in request.form:
-            csv_file = request.files['csv_file3']
-            txt_file = request.files['txt_file3']
-
-            # Save the uploaded files
-            csv_path = os.path.join(UPLOAD_FOLDER, csv_file.filename)
-            txt_path = os.path.join(UPLOAD_FOLDER, txt_file.filename)
-            csv_file.save(csv_path)
-            txt_file.save(txt_path)
-
-            try:
-                # Process the files and create a DataFrame
-                # Note: You may want to create a new function in matrix_patch.py for this feature
-                df = matrix_patch.update_matrix(csv_path, txt_path)
-
-                # Save the DataFrame as a CSV file in the downloads folder
-                output_file = f'{os.path.basename(csv_path)}_updated.csv'
-                output_path = os.path.join(DOWNLOAD_FOLDER, output_file)
-                df.to_csv(output_path, index=True)
-
-                file_creation_times[output_file] = datetime.now()
-
-                # Clear uploads folder
-                clear_upload_folder()
-
-                return jsonify({
-                    'message': 'Matrix updated successfully',
-                    'download_url': f'/download/{output_file}'
-                })
-            except Exception as e:
-                print(f"Error: {e}")
-                return jsonify({'error': str(e)}), 500
+        except Exception as e:
+            print(f"Error occurred: {str(e)}")
+            return jsonify({'error': str(e)}), 500
 
     return render_template('index.html')
 

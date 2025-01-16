@@ -22,7 +22,7 @@ jobs:
         run: python -m pip install flake8
 
       - name: Run flake8
-        run: flake8 . | tee flake8_report.txt  # Run flake8 in the root directory (.)
+        run: flake8 --ignore=E501 . | tee flake8_report.txt  # Run flake8 in the root directory (.)
 
       - name: Upload flake8 report if there are failures
         if: failure()

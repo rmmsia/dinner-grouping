@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Grouping App</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <title>Group Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         body {
@@ -33,124 +33,141 @@
             background-color: #0d6efd;
             border-color: #0d6efd;
         }
-        .btn-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
+        .slider-container {
+            margin-bottom: 1.5rem;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .slider-value {
+            min-width: 3em;
+            text-align: right;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        .alert {
+            margin-top: 1rem;
         }
     </style>
   </head>
   <body>
     <div class="container">
-        <h1 class="mb-4">Grouping App</h1>
+        <h1 class="mb-4">Group Generator</h1>
 
         <div class="feature-section">
-            <h2>Generate Groups</h2>
-            <form id="feature1-form" class="mb-3">
+            <form id="grouping-form" class="mb-3">
                 <div class="mb-3">
                     <label for="csv_file" class="form-label">Pairing Score Matrix (.csv):</label>
                     <input type="file" class="form-control" name="csv_file" accept=".csv" required>
                 </div>
                 <div class="mb-3">
-                    <label for="txt_file" class="form-label">Attendees (.txt):</label>
-                    <input type="file" class="form-control" name="txt_file" accept=".txt" required>
+                    <label for="attendees_file" class="form-label">Attendees (.csv):</label>
+                    <input type="file" class="form-control" name="attendees_file" accept=".csv" required>
                 </div>
                 <div class="mb-3">
                     <label for="integer_input" class="form-label">Group Size:</label>
                     <input type="number" class="form-control" name="integer_input" required>
                 </div>
+                
+                <div class="mb-4">
+                    <h4>Weighting Factors</h4>
+                    <p>Adjust the sliders to change the importance of each factor when generating groups.</p>
+                    <small>A larger weight means algorithm values diversity in that factor more when forming a group. </small>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Gender:</span>
+                            <span class="slider-value" id="factor1-value">0.33</span>
+                        </div>
+                        <input type="range" class="form-range" id="factor1" min="0" max="1" step="0.01" value="0.33">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Year:</span>
+                            <span class="slider-value" id="factor2-value">0.33</span>
+                        </div>
+                        <input type="range" class="form-range" id="factor2" min="0" max="1" step="0.01" value="0.33">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Faculty:</span>
+                            <span class="slider-value" id="factor3-value">0.34</span>
+                        </div>
+                        <input type="range" class="form-range" id="factor3" min="0" max="1" step="0.01" value="0.34">
+                    </div>
+                    <div id="sum-warning" class="alert alert-warning" style="display: none;">
+                        The sum of all factors must equal 1.0
+                    </div>
+                </div>
+
                 <button type="submit" class="btn btn-primary">Generate Groups</button>
             </form>
             <h3>Groups:</h3>
-            <pre id="feature1-output" class="mt-3"></pre>
-            <a id="view-link-1" href="#" target="_blank" class="btn btn-secondary mt-2" style="display: none;">Download Groups</a>
-        </div>
-
-        <div class="feature-section">
-            <h2>Patch Matrix File</h2>
-            <p>Use this to patch a pairing score matrix file to manually set the pairing scores within a group of people.</p>
-            <p>This can be used to reset scores between a pair or group of people to 0, or to discourage groupings by setting a higher pairing score.</p>
-            <form id="feature2-form" class="mb-3">
-                <div class="mb-3">
-                    <label for="csv_file2" class="form-label">Pairing Score Matrix (.csv):</label>
-                    <input type="file" class="form-control" name="csv_file2" accept=".csv" required>
-                </div>
-                <div class="mb-3">
-                    <label for="txt_file2" class="form-label">Groups of People to Patch (.txt):</label>
-                    <input type="file" class="form-control" name="txt_file2" accept=".txt" required>
-                </div>
-                <div class="mb-3">
-                    <label for="patch_score" class="form-label">Score to Apply:</label>
-                    <input type="number" class="form-control" name="patch_score" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Patch Matrix</button>
-            </form>
-            <h3>Result:</h3>
-            <pre id="feature2-output" class="mt-3"></pre>
-            <a id="download-link-2" href="#" target="_blank" class="btn btn-secondary mt-2" style="display: none;">Download Processed CSV</a>
-        </div>
-
-        <div class="feature-section">
-            <h2>Update Matrix</h2>
-            <p>When groupings are finalised, use this feature to increment pairing score by 1.</p>
-            <p>You can use the .txt file generated in the Grouping feature, or a different grouping file.</p>
-            <form id="feature3-form" class="mb-3">
-                <div class="mb-3">
-                    <label for="csv_file3" class="form-label">Pairing Score Matrix (.csv):</label>
-                    <input type="file" class="form-control" name="csv_file3" accept=".csv" required>
-                </div>
-                <div class="mb-3">
-                    <label for="txt_file3" class="form-label">Groupings (.txt):</label>
-                    <input type="file" class="form-control" name="txt_file3" accept=".txt" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Update Matrix</button>
-            </form>
-            <h3>Result:</h3>
-            <pre id="feature3-output" class="mt-3"></pre>
-            <a id="download-link-3" href="#" target="_blank" class="btn btn-secondary mt-2" style="display: none;">Download Processed CSV</a>
+            <pre id="output" class="mt-3"></pre>
+            <a id="download-link" href="#" target="_blank" class="btn btn-secondary mt-2" style="display: none;">Download Groups</a>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
         $(document).ready(function() {
-            function displayOutput(outputId, data, linkId) {
-                let outputElement = $(outputId);
-                outputElement.empty();
-                if (data.groups) {
-                    // Feature 1 output
-                    data.groups.forEach(function(group, index) {
-                        outputElement.append('Group ' + (index + 1) + ': ' + JSON.stringify(group) + "\n");
-                    });
-                } else if (data.message) {
-                    // Feature 2 output
-                    outputElement.text(data.message);
-                } else if (data.error) {
-                    // Error output
-                    outputElement.text('Error: ' + data.error);
-                    $(linkId).hide();
-                    return;
-                } else {
-                    // Default output
-                    outputElement.text('No data to display');
-                    $(linkId).hide();
-                    return;
+            const sliders = ['factor1', 'factor2', 'factor3'];
+            let updating = false;
+
+            function updateSliders(changedId) {
+                if (updating) return;
+                updating = true;
+
+                const values = sliders.map(id => parseFloat($('#' + id).val()));
+                const sum = values.reduce((a, b) => a + b, 0);
+                const target = 1.0;
+
+                if (changedId) {
+                    // Adjust other sliders proportionally
+                    const othersIds = sliders.filter(id => id !== changedId);
+                    const remainingValue = target - values[sliders.indexOf(changedId)];
+                    const currentOthersSum = othersIds.reduce((sum, id) => sum + parseFloat($('#' + id).val()), 0);
+                    
+                    if (remainingValue > 0) {
+                        othersIds.forEach(id => {
+                            const ratio = parseFloat($('#' + id).val()) / currentOthersSum;
+                            $('#' + id).val((remainingValue * ratio).toFixed(2));
+                            $('#' + id + '-value').text($('#' + id).val());
+                        });
+                    } else {
+                        othersIds.forEach(id => {
+                            $('#' + id).val(0);
+                            $('#' + id + '-value').text('0.00');
+                        });
+                    }
                 }
+
+                // Update warning message
+                const newSum = sliders.reduce((sum, id) => sum + parseFloat($('#' + id).val()), 0);
+                $('#sum-warning').toggle(Math.abs(newSum - target) > 0.01);
                 
-                // Update link
-                if (data.content_url) {
-                    $(linkId).attr('href', data.content_url).show();
-                } else if (data.download_url) {
-                    $(linkId).attr('href', data.download_url).show();
-                } else {
-                    $(linkId).hide();
-                }
+                updating = false;
             }
 
-            $('#feature1-form, #feature2-form, #feature3-form').on('submit', function(e) {
+            // Add event listeners to sliders
+            sliders.forEach(id => {
+                $('#' + id).on('input', function() {
+                    $('#' + id + '-value').text($(this).val());
+                    updateSliders(id);
+                });
+            });
+
+            // Form submission
+            $('#grouping-form').on('submit', function(e) {
                 e.preventDefault();
-                var formData = new FormData(this);
-                var featureNumber = this.id.charAt(7);
-                formData.append('feature' + featureNumber, 'true');
+                const formData = new FormData(this);
+                
+                // Add slider values to form data
+                sliders.forEach(id => {
+                    formData.append(id, $('#' + id).val());
+                });
+
                 $.ajax({
                     url: '/',
                     type: 'POST',
@@ -158,11 +175,26 @@
                     processData: false,
                     contentType: false,
                     success: function(response) {
-                        displayOutput('#feature' + featureNumber + '-output', response, '#' + (featureNumber === '1' ? 'view' : 'download') + '-link-' + featureNumber);
+                        if (response.error) {
+                            $('#output').text('Error: ' + response.error);
+                            $('#download-link').hide();
+                        } else {
+                            let outputText = '';
+                            response.groups.forEach((group, index) => {
+                                outputText += `Group ${index + 1}: ${JSON.stringify(group)}\n`;
+                            });
+                            $('#output').text(outputText);
+                            
+                            if (response.download_url) {
+                                $('#download-link')
+                                    .attr('href', response.download_url)
+                                    .show();
+                            }
+                        }
                     },
                     error: function(xhr, status, error) {
-                        $('#feature' + featureNumber + '-output').text('An error occurred: ' + error);
-                        $('#' + (featureNumber === '1' ? 'view' : 'download') + '-link-' + featureNumber).hide();
+                        $('#output').text('An error occurred: ' + error);
+                        $('#download-link').hide();
                     }
                 });
             });
