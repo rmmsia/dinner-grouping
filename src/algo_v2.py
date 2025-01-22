@@ -104,6 +104,14 @@ def update_pairing_scores(groups, matrix):
     return matrix
 
 
+def add_new_attendees(new_attendees, matrix):
+    for attendee in new_attendees:
+        matrix.loc[attendee] = 0
+        matrix[attendee] = 0
+
+    return matrix
+
+
 '''
 Main workflow takes in the following inputs:
 - pairing_scores_csv (str): path to the CSV file containing historical pairing scores
@@ -119,7 +127,7 @@ Returns:
 def main_workflow(pairing_scores_csv, attendees_csv, weights_list, group_size):
     # Load attendees
     print("Loading attendees")
-    attendees_df = pd.read_csv(attendees_csv)
+    attendees_df = pd.read_csv(attendees_csv, encoding='latin1')
     attendees_df.set_index('Name', drop=False, inplace=True)
 
     attendees = {
@@ -140,6 +148,15 @@ def main_workflow(pairing_scores_csv, attendees_csv, weights_list, group_size):
         'year': weights_list[1],
         'faculty': weights_list[2]
     }
+
+    # Retrieve Telegram IDs
+    telegram_ids = [attendee.telegram_id for attendee in attendees.values()]
+    new_telegram_ids = [id for id in telegram_ids if id not in pairing_scores.index]
+
+    # Add new attendees to pairing scores matrix
+    if new_telegram_ids:
+        pairing_scores = add_new_attendees(new_telegram_ids, pairing_scores)
+
 
     groups = assign_groups(attendees, group_size, pairing_scores, weights)
 
