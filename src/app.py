@@ -113,7 +113,7 @@ def index():
             print("Files saved successfully")
 
             # Generate groups
-            groups = main_workflow(matrix, attendees, factors, int(grp_size))
+            groups, group_scores = main_workflow(matrix, attendees, factors, int(grp_size))
 
             # Create DataFrame with groups for output
             df = groups_to_dataframe(groups)
@@ -132,8 +132,12 @@ def index():
 
             clear_upload_folder()
 
+            if request.form.get('goodness_toggle') != 'true':
+                group_scores = None
+
             return jsonify({
                 'groups': groups,
+                'goodness_score': group_scores,
                 'download_url': f'/download/{output_file}'
             })
 

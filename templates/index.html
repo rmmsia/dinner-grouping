@@ -71,6 +71,12 @@
                     <label for="integer_input" class="form-label">Group Size:</label>
                     <input type="number" class="form-control" name="integer_input" required>
                 </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="goodness-toggle">
+                    <label class="form-check-label" for="goodness-toggle">Show Group Goodness Score (BETA)</label>
+                </div>
+                
                 
                 <div class="mb-4">
                     <h4>Weighting Factors</h4>
@@ -162,11 +168,14 @@
             $('#grouping-form').on('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                
+
                 // Add slider values to form data
                 sliders.forEach(id => {
                     formData.append(id, $('#' + id).val());
                 });
+
+                // Add the toggle state to form data
+                formData.append('goodness_toggle', $('#goodness-toggle').prop('checked') ? 'true' : 'false');
 
                 $.ajax({
                     url: '/',
@@ -184,7 +193,12 @@
                                 outputText += `Group ${index + 1}: ${JSON.stringify(group)}\n`;
                             });
                             $('#output').text(outputText);
-                            
+
+                            // Display the group goodness score if the toggle was enabled
+                            if (response.goodness_score) {
+                                $('#output').append(`<h4>Group Goodness Score: ${response.goodness_score}</h4>`);
+                            }
+
                             if (response.download_url) {
                                 $('#download-link')
                                     .attr('href', response.download_url)
@@ -198,6 +212,7 @@
                     }
                 });
             });
+
         });
     </script>
   </body>

@@ -1,5 +1,7 @@
 import random
 import pandas as pd
+import chardet
+import qa
 from collections import defaultdict
 
 # Global
@@ -22,6 +24,7 @@ class Attendee:
 
 def assign_groups(attendees, group_size, matrix, weights):
     print(weights)
+    print(f"Group size: {group_size}")
     groups = []
     ungrouped = list(attendees.values())
     random.shuffle(ungrouped)
@@ -125,9 +128,14 @@ Returns:
 
 
 def main_workflow(pairing_scores_csv, attendees_csv, weights_list, group_size):
+    # Detect encoding of attendees CSV
+    with open(attendees_csv, 'rb') as f:
+        result = chardet.detect(f.read())
+    detected_encoding = result['encoding']
+
     # Load attendees
     print("Loading attendees")
-    attendees_df = pd.read_csv(attendees_csv, encoding='latin1')
+    attendees_df = pd.read_csv(attendees_csv, encoding=detected_encoding)
     attendees_df.set_index('Name', drop=False, inplace=True)
 
     attendees = {
@@ -160,8 +168,12 @@ def main_workflow(pairing_scores_csv, attendees_csv, weights_list, group_size):
 
     groups = assign_groups(attendees, group_size, pairing_scores, weights)
 
+    # Check goodness of groups
+    group_scores = qa.calc_group_quality(groups, pairing_scores, weights)
+    print(f"Group scores: {group_scores}")
+
     print("Successfully generated groups")
-    return groups
+    return groups, group_scores
 
 
 def groups_to_dataframe(groups):
