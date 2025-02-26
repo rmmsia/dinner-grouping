@@ -22,28 +22,41 @@ class Attendee:
         return f'{self.name} ({self.email}, {self.telegram_id}, {self.gender}, {self.year}, {self.faculty})'
 
 
-def assign_groups(attendees, group_size, matrix, weights):
+class Group:
+    def __init__(self, group_id, capacity, members):
+        self.group_id = None
+        self.capacity = capacity
+        self.members = members
+
+
+def determine_group_size(num_attendees, max_size=5):
+    g = (num_attendees + max_size - 1) // max_size  # Calculate minimum groups needed
+    q, r = divmod(num_attendees, g)  # Compute base size and remainder
+    group_sizes = [q + 1] * r + [q] * (g - r)  # First 'r' groups get q+1, rest get q
+    return group_sizes
+
+
+def assign_groups(attendees, matrix, weights):
     print(weights)
-    print(f"Group size: {group_size}")
-    groups = []
+
+    group_sizes = determine_group_size(len(attendees), 5)
+    groups = [Group(i, group_size, []) for i, group_size in enumerate(group_sizes, start=1)]
     ungrouped = list(attendees.values())
     random.shuffle(ungrouped)
 
-    while ungrouped:
-        group = []
-
-        while len(group) < group_size and ungrouped:
+    for group in groups:
+        # Greedily assign members to group, for each group
+        while len(group.members) < group.capacity and ungrouped:
             best_candidate = None
             best_score = float('-inf')
 
             for candidate in ungrouped:
                 # Calculate diversity score
-                diversity_score = calc_diversity_score(candidate, group, weights)
+                diversity_score = calc_diversity_score(candidate, group.members, weights)
 
                 # Calculate repetition penalty
-                # TODO: Use email in future as that is immutable, for now use telegram_id
                 repeat_penalty = sum(
-                    matrix.loc[candidate.telegram_id, member.telegram_id] for member in group
+                    matrix.loc[candidate.telegram_id, member.telegram_id] for member in group.members
                 )
 
                 # Total score
@@ -57,10 +70,8 @@ def assign_groups(attendees, group_size, matrix, weights):
                     best_candidate = candidate
 
             if best_candidate:
-                group.append(best_candidate)
+                group.members.append(best_candidate)
                 ungrouped.remove(best_candidate)
-
-        groups.append(group)
 
     return groups
 
@@ -127,30 +138,7 @@ Returns:
 '''
 
 
-def main_workflow(pairing_scores_csv, attendees_csv, weights_list, group_size):
-    # Detect encoding of attendees CSV
-    with open(attendees_csv, 'rb') as f:
-        result = chardet.detect(f.read())
-    detected_encoding = result['encoding']
-
-    # Load attendees
-    print("Loading attendees")
-    attendees_df = pd.read_csv(attendees_csv, encoding=detected_encoding)
-    attendees_df.set_index('Name', drop=False, inplace=True)
-
-    attendees = {
-        row['Name']: Attendee(row['Name'], row['Gender'], row['Telegram ID'], row['Email'], row['Year'], row['Faculty'])
-        for _, row in attendees_df.iterrows()
-    }
-    attendees = {attendee.name: attendee for attendee in attendees.values()}  # key is name, value is Attendee object
-
-    # Load historical pairing scores
-    try:
-        pairing_scores = load_pairing_score_matrix(pairing_scores_csv)
-    except FileNotFoundError:
-        attendee_names = list(attendees.keys())
-        pairing_scores = pd.DataFrame(0, index=attendee_names, columns=attendee_names)
-
+def main_workflow(pairing_scores, attendees, weights_list):
     weights = {
         'gender': weights_list[0],
         'year': weights_list[1],
@@ -166,14 +154,21 @@ def main_workflow(pairing_scores_csv, attendees_csv, weights_list, group_size):
         pairing_scores = add_new_attendees(new_telegram_ids, pairing_scores)
 
 
-    groups = assign_groups(attendees, group_size, pairing_scores, weights)
+    # groups is a list of Group objects
+    groups = assign_groups(attendees, pairing_scores, weights)
+
+    # get list of lists of Attendees
+    groups_list = [group.members for group in groups]
 
     # Check goodness of groups
-    group_scores = qa.calc_group_quality(groups, pairing_scores, weights)
+    group_scores = qa.calc_group_quality(groups_list, pairing_scores, weights)
     print(f"Group scores: {group_scores}")
 
+    # Print pairing scores within each group
+    qa.print_group_pairings(pairing_scores, groups_list)
+
     print("Successfully generated groups")
-    return groups, group_scores
+    return groups_list, group_scores
 
 
 def groups_to_dataframe(groups):

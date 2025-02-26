@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
-from algo_v2 import main_workflow, groups_to_dataframe
+from algo_v2 import main_workflow, groups_to_dataframe, Attendee
+import pandas as pd
 import os
+import chardet
 import shutil
 import threading
 from datetime import datetime, timedelta
@@ -50,6 +52,37 @@ def delayed_file_cleanup():
         threading.Event().wait(30)
 
 
+def load_attendees(attendees_csv):
+    # Detect encoding of attendees CSV
+    with open(attendees_csv, 'rb') as f:
+        result = chardet.detect(f.read())
+    detected_encoding = result['encoding']
+
+    # Load attendees
+    print("Loading attendees")
+    attendees_df = pd.read_csv(attendees_csv, encoding=detected_encoding)
+    attendees_df.set_index('Name', drop=False, inplace=True)
+
+    attendees = {
+        row['Name']: Attendee(row['Name'], row['Gender'], row['Telegram ID'], row['Email'], row['Year'], row['Faculty'])
+        for _, row in attendees_df.iterrows()
+    }
+    attendees = {attendee.name: attendee for attendee in attendees.values()}  # key is name, value is Attendee object
+
+    return attendees
+
+
+def load_pairing_scores(pairing_scores_csv, attendees):
+    # Load historical pairing scores
+    try:
+        pairing_scores = pd.read_csv(pairing_scores_csv, index_col=0)
+    except FileNotFoundError:
+        attendee_names = list(attendees.keys())
+        pairing_scores = pd.DataFrame(0, index=attendee_names, columns=attendee_names)
+    
+    return pairing_scores
+
+
 # Start the cleanup thread
 cleanup_thread = threading.Thread(target=delayed_file_cleanup, daemon=True)
 cleanup_thread.start()
@@ -72,11 +105,11 @@ def index():
             csv_file = request.files['csv_file']
             attendees_file = request.files['attendees_file']  # Updated field name
 
-            # Check for group size
-            if not request.form.get('integer_input'):
-                return jsonify({'error': 'Group size is required'}), 400
+            # # Check for group size
+            # if not request.form.get('integer_input'):
+            #     return jsonify({'error': 'Group size is required'}), 400
 
-            grp_size = request.form['integer_input']
+            # grp_size = request.form['integer_input']
 
             # Check for factors
             required_factors = ['factor1', 'factor2', 'factor3']
@@ -112,8 +145,12 @@ def index():
 
             print("Files saved successfully")
 
+            # Load attendees and pairing scores
+            attendees_data = load_attendees(attendees)
+            pairing_scores = load_pairing_scores(matrix, attendees)
+
             # Generate groups
-            groups, group_scores = main_workflow(matrix, attendees, factors, int(grp_size))
+            groups, group_scores = main_workflow(pairing_scores, attendees_data, factors)
 
             # Create DataFrame with groups for output
             df = groups_to_dataframe(groups)
@@ -122,7 +159,7 @@ def index():
             df.to_csv(output_path, index=True)
             file_creation_times[output_file] = datetime.now()
 
-            # Clean up uploaded files
+            # Clean up uploaded files (fix)
             for file_path in [matrix, attendees]:
                 if os.path.exists(file_path):
                     os.remove(file_path)
