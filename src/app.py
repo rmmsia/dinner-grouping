@@ -3,7 +3,9 @@ from algo_v2 import main_workflow, groups_to_dataframe, Attendee
 import pandas as pd
 import os
 import chardet
+import signal
 import shutil
+import sys
 import threading
 from datetime import datetime, timedelta
 
@@ -52,6 +54,29 @@ def delayed_file_cleanup():
         threading.Event().wait(30)
 
 
+def cleanup(folders_to_clear):
+    for folder in folders_to_clear:
+        if os.path.exists(folder):
+            print(f"Cleaning up folder: {folder}")
+            # Delete all files in the folder
+            for filename in os.listdir(folder):
+                file_path = os.path.join(folder, filename)
+                try:
+                    if os.path.isfile(file_path):  # Check if it's a file
+                        os.remove(file_path)  # Remove file
+                        print(f"Deleted: {file_path}")
+                except Exception as e:
+                    print(f"Error removing {file_path}: {e}")
+
+def handle_signal(signal, frame):
+    """
+    Handle the interrupt signal (Ctrl+C) to clean up before exiting.
+    """
+    print("\nInterrupted! Performing cleanup...")
+    cleanup([UPLOAD_FOLDER, DOWNLOAD_FOLDER])
+    sys.exit(0)  # Exit the program after cleanup
+
+
 def load_attendees(attendees_csv):
     # Detect encoding of attendees CSV
     with open(attendees_csv, 'rb') as f:
@@ -61,10 +86,10 @@ def load_attendees(attendees_csv):
     # Load attendees
     print("Loading attendees")
     attendees_df = pd.read_csv(attendees_csv, encoding=detected_encoding)
-    attendees_df.set_index('Name', drop=False, inplace=True)
+    attendees_df.set_index('name', drop=False, inplace=True)
 
     attendees = {
-        row['Name']: Attendee(row['Name'], row['Gender'], row['Telegram ID'], row['Email'], row['Year'], row['Faculty'])
+        row['name']: Attendee(row['name'], row['gender'], row['telegram'], row['email'], row['year'], row['faculty'])
         for _, row in attendees_df.iterrows()
     }
     attendees = {attendee.name: attendee for attendee in attendees.values()}  # key is name, value is Attendee object
@@ -86,6 +111,9 @@ def load_pairing_scores(pairing_scores_csv, attendees):
 # Start the cleanup thread
 cleanup_thread = threading.Thread(target=delayed_file_cleanup, daemon=True)
 cleanup_thread.start()
+
+# Register the signal handler
+signal.signal(signal.SIGINT, handle_signal)
 
 
 @app.route('/', methods=['GET', 'POST'])
