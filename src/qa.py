@@ -22,10 +22,11 @@ def calc_group_quality(groups, matrix, weights):
 
         # Track pairings for repeat grouping
         for i, attendee1 in enumerate(group):
-            for attendee2 in group[i+1:]:
-                if matrix.at[attendee1.telegram_id, attendee2.telegram_id] > 0:
-                    total_repeat_pairings += 1
+            for attendee2 in group[i + 1:]:
+                repeat_count = matrix.at[attendee1.telegram_id, attendee2.telegram_id]
+                total_repeat_pairings += repeat_count  # Linear punishment repeats based on score
                 total_possible_pairs += 1
+
 
         # Compute diversity score based on proportions and weights
         expected_year = weights['year'] * group_size
@@ -48,3 +49,13 @@ def calc_group_quality(groups, matrix, weights):
         group_scores.append(group_goodness_score)
 
     return group_scores
+
+def print_group_pairings(matrix, groups):
+    for group_idx, group in enumerate(groups):
+        print(f"Group {group_idx + 1}:")
+        for i in range(len(group)):
+            for j in range(i + 1, len(group)):
+                attendee1 = group[i]
+                attendee2 = group[j]
+                score = matrix.at[attendee1.telegram_id, attendee2.telegram_id]
+                print(f"  {attendee1.telegram_id} - {attendee2.telegram_id}: {score}")
