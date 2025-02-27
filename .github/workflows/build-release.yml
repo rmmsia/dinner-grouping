@@ -8,6 +8,11 @@ on:
     branches:
       - main  # Or your default branch
   workflow_dispatch:  # Allows manual triggering
+      inputs:
+        tag_name:
+          description: 'Release tag'
+          required: true
+          default: 'v1.0.0'
 
 
 jobs:
