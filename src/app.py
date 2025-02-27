@@ -7,9 +7,16 @@ import signal
 import shutil
 import sys
 import threading
+import webview
 from datetime import datetime, timedelta
 
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+if getattr(sys, 'frozen', False):
+    # If the app is frozen (i.e., packaged with PyInstaller)
+    ROOT_DIR = os.path.join(sys._MEIPASS, 'templates')
+else:
+    # If the app is running in development mode
+    ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+
 app = Flask(__name__, template_folder=ROOT_DIR)
 
 file_creation_times = {}
@@ -108,12 +115,16 @@ def load_pairing_scores(pairing_scores_csv, attendees):
     return pairing_scores
 
 
+def close_window():
+    """This function is called to close the window and trigger cleanup."""
+    print("Closing window and performing cleanup...")
+    cleanup([UPLOAD_FOLDER, DOWNLOAD_FOLDER])
+    sys.exit(0)
+
+
 # Start the cleanup thread
 cleanup_thread = threading.Thread(target=delayed_file_cleanup, daemon=True)
 cleanup_thread.start()
-
-# Register the signal handler
-signal.signal(signal.SIGINT, handle_signal)
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -217,6 +228,21 @@ def index():
 def download_file(filename):
     return send_from_directory(DOWNLOAD_FOLDER, filename)
 
+def run_flask():
+    app.run(debug=True, use_reloader=False)
+
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Register the signal handler
+    signal.signal(signal.SIGINT, handle_signal)
+
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.daemon = True
+    flask_thread.start()
+
+    # Open Flask app in native window
+    window = webview.create_window("Group Generator", "http://127.0.0.1:5000")
+
+    window.events.closed += close_window
+    
+    webview.start()
