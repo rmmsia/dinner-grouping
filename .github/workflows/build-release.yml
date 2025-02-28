@@ -61,7 +61,7 @@ jobs:
 
       - name: Build with PyInstaller for Windows
         run: |
-          pyinstaller --onefile --distpath dist/ --workpath build/ --specpath src/ --add-data "templates/index.html;templates" src/app.py
+          pyinstaller --onefile --add-data "templates/index.html;templates" src/app.py
 
       - name: Upload Windows build to GitHub Releases
         uses: softprops/action-gh-release@v1
