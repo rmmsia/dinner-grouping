@@ -227,8 +227,8 @@ def download_file(filename):
     return send_from_directory(DOWNLOAD_FOLDER, filename)
 
 def run_flask():
-    app.run(debug=True, use_reloader=False)
-
+    print("Running Flask app")
+    app.run(debug=False)
 
 if __name__ == '__main__':
     # Register the signal handler
