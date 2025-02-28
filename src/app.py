@@ -10,12 +10,10 @@ import threading
 import webview
 from datetime import datetime, timedelta
 
-if getattr(sys, 'frozen', False):
-    # If the app is frozen (i.e., packaged with PyInstaller)
-    ROOT_DIR = os.path.join(sys._MEIPASS, 'templates')
+if hasattr(sys, '_MEIPASS'):
+    ROOT_DIR = os.path.join(sys._MEIPASS, 'templates')   # PyInstaller one-file mode 
 else:
-    # If the app is running in development mode
-    ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+    ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))   # Dev / py2app mode
 
 app = Flask(__name__, template_folder=ROOT_DIR)
 
