@@ -35,21 +35,12 @@ jobs:
       
       - name: Build with PyInstaller for macOS
         run: |
-          pyinstaller --onefile --windowed --add-data "templates/index.html:templates" src/app.py
-      
-      - name: Create macOS bundle
-        run: |
-          cd dist
-          mkdir -p app.app/Contents/MacOS
-          cp app app.app/Contents/MacOS/
-          mkdir -p app.app/Contents/Resources/templates
-          cp ../templates/index.html app.app/Contents/Resources/templates/
-          zip -r app-macos.zip app.app
+          pyinstaller --onefile --add-data "templates/*:templates" src/app.py
       
       - name: Upload macOS build to GitHub Releases
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/app-macos.zip
+          files: dist/app  # Path to your built macOS executable (app.py will be compiled to app)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
