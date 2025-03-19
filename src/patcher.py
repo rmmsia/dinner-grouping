@@ -1,6 +1,7 @@
 from algo_v2 import Attendee, Group
 from loaders import load_attendees, parse_groups_txt
 
+
 def patch_matrix(pairing_scores, groups_path, patch_value):
     '''
     pairing_scores: pd.DataFrame (pairing scores matrix)

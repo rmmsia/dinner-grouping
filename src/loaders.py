@@ -2,6 +2,7 @@ import chardet
 import pandas as pd
 from algo_v2 import Attendee
 
+
 def load_attendees(attendees_csv):
     """
     Load attendees from a CSV file.
@@ -85,6 +86,7 @@ def load_pairing_scores(pairing_scores_csv, attendees):
         pairing_scores = pd.DataFrame(0, index=attendee_names, columns=attendee_names)
 
     return pairing_scores
+
 
 def parse_groups_txt(filename):
     with open(filename, 'r') as file:
