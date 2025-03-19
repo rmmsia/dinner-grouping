@@ -3,16 +3,17 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'  # Trigger on new tags starting with 'v', e.g., 'v1.0.0'
+      - 'v*'
   pull_request:
     branches:
-      - main  # Or your default branch
+      - main
   workflow_dispatch:  # Allows manual triggering
       inputs:
         tag_name:
           description: 'Release tag'
           required: true
           default: 'v1.0.0'
+
 
 jobs:
   build_mac:
@@ -24,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.10'  # Downgraded from 3.12 for better compatibility
+          python-version: '3.10'
       
       - name: Install dependencies
         run: |
@@ -34,21 +35,36 @@ jobs:
       
       - name: Build with PyInstaller for macOS
         run: |
-          # Use --windowed for better user experience and app bundle for better macOS integration
-          pyinstaller --windowed --name="Dinner Grouping" --add-data "templates/*:templates" src/app.py
+          pyinstaller --onefile --add-data "templates/*:templates" src/app.py
           
-          # Create a zip archive of the app bundle
-          cd dist && zip -r "Dinner-Grouping-macOS.zip" "Dinner Grouping.app" && cd ..
+          # Make sure the executable has right permissions
+          chmod +x dist/app
+          
+          # Create a macOS app launcher script
+          cat > dist/run-dinner-grouping.command << 'EOL'
+          #!/bin/bash
+          # Get the directory where this script is located
+          DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+          # Run the app executable from that directory
+          "$DIR/app"
+          EOL
+          
+          # Make the launcher script executable
+          chmod +x dist/run-dinner-grouping.command
+          
+          # Package everything in a zip to preserve permissions
+          cd dist && zip -r "dinner-grouping-mac.zip" app run-dinner-grouping.command && cd ..
       
       - name: Upload macOS build to GitHub Releases
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/Dinner-Grouping-macOS.zip
+          files: |
+            dist/dinner-grouping-mac.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build_windows:
-    runs-on: windows-latest
+    runs-on: windows-latest  # Build for Windows
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -56,7 +72,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.10'  # Downgraded for better compatibility
+          python-version: '3.10'  # Using same version as macOS for consistency
 
       - name: Install dependencies
         run: |
@@ -66,15 +82,22 @@ jobs:
 
       - name: Build with PyInstaller for Windows
         run: |
-          pyinstaller --windowed --name="Dinner Grouping" --add-data "templates/index.html;templates" src/app.py
+          pyinstaller --onefile --add-data "templates/index.html;templates" src/app.py
           
-          # Zip the output for easier distribution
-          Compress-Archive -Path "dist\Dinner Grouping" -DestinationPath "dist\Dinner-Grouping-Windows.zip"
+          # Rename to a more descriptive name
+          move dist\app.exe dist\dinner-grouping.exe
+          
+          # Create a simple batch file launcher
+          echo @echo off > dist\run-dinner-grouping.bat
+          echo start dinner-grouping.exe >> dist\run-dinner-grouping.bat
+          
+          # Zip everything for distribution
+          powershell Compress-Archive -Path "dist\dinner-grouping.exe","dist\run-dinner-grouping.bat" -DestinationPath "dist\dinner-grouping-windows.zip"
 
       - name: Upload Windows build to GitHub Releases
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/Dinner-Grouping-Windows.zip
+          files: dist/dinner-grouping-windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -85,37 +108,46 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Create Release
+      - name: Create unified release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/Dinner-Grouping-macOS.zip
-            dist/Dinner-Grouping-Windows.zip
+            dist/dinner-grouping-mac.zip
+            dist/dinner-grouping-windows.zip
           name: Dinner Grouping ${{ github.event.inputs.tag_name || github.ref_name }}
           body: |
-            ## Dinner Grouping Application
+            ## Dinner Grouping Tool
             
             ### Installation Instructions
             
             #### macOS Users
-            1. Download the macOS zip file
-            2. Extract the application
-            3. **Important**: Right-click the app and select "Open" (do not double-click)
-            4. When prompted with security warnings, click "Open" again
-            5. The app will now be saved as an exception to your security settings
+            1. Download the `dinner-grouping-mac.zip` file
+            2. Extract the zip file
+            3. **Option 1:** Double-click the `run-dinner-grouping.command` file to launch the app
+            4. **Option 2:** Open Terminal, navigate to the extracted folder, and run `./app`
+            5. If you get security warnings, go to System Preferences → Security & Privacy and click "Open Anyway"
             
             #### Windows Users
-            1. Download the Windows zip file
-            2. Extract the folder
-            3. Run the "Dinner Grouping" executable inside the folder
+            1. Download the `dinner-grouping-windows.zip` file
+            2. Extract the zip file
+            3. Double-click the `run-dinner-grouping.bat` file OR run `dinner-grouping.exe` directly
+            4. If Windows SmartScreen appears, click "More info" and then "Run anyway"
             
             ### Troubleshooting
             
             #### macOS
-            * If you get "app is damaged" warnings, try right-clicking and selecting Open
-            * If Gatekeeper blocks the app, go to System Preferences > Security & Privacy, and click "Open Anyway"
+            * If the `.command` file doesn't work, make it executable by opening Terminal and running:
+              ```
+              chmod +x path/to/run-dinner-grouping.command
+              ```
+            * If you still have issues, try running the app directly in Terminal:
+              ```
+              cd path/to/extracted/folder
+              chmod +x app
+              ./app
+              ```
             
             #### Windows
-            * If SmartScreen blocks the app, click "More info" and then "Run anyway"
+            * If the executable doesn't run, try running it from Command Prompt to see any error messages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
