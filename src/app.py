@@ -11,7 +11,7 @@ import webview
 from datetime import datetime, timedelta
 
 if hasattr(sys, '_MEIPASS'):
-    ROOT_DIR = os.path.join(sys._MEIPASS, 'templates')   # PyInstaller one-file mode 
+    ROOT_DIR = os.path.join(sys._MEIPASS, 'templates')   # PyInstaller one-file mode
 else:
     ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))   # Dev / py2app mode
 
@@ -73,6 +73,7 @@ def cleanup(folders_to_clear):
                 except Exception as e:
                     print(f"Error removing {file_path}: {e}")
 
+
 def handle_signal(signal, frame):
     """
     Handle the interrupt signal (Ctrl+C) to clean up before exiting.
@@ -85,13 +86,13 @@ def handle_signal(signal, frame):
 def load_attendees(attendees_csv):
     """
     Load attendees from a CSV file.
-    
+
     Args:
         attendees_csv (str): Path to the CSV file containing attendee information.
-        
+
     Returns:
         dict: Dictionary mapping attendee names to Attendee objects.
-        
+
     Raises:
         ValueError: If the CSV file is missing required columns or contains invalid data.
     """
@@ -104,29 +105,29 @@ def load_attendees(attendees_csv):
     print("Loading attendees")
     try:
         attendees_df = pd.read_csv(attendees_csv, encoding=detected_encoding)
-        
+
         # Check required columns
         required_columns = ['name', 'gender', 'telegram_id', 'email', 'year', 'faculty']
         missing_columns = [col for col in required_columns if col not in attendees_df.columns]
-        
+
         if missing_columns:
             error_msg = f"CSV file is missing required columns: {', '.join(missing_columns)}"
             print(error_msg)
             raise ValueError(error_msg)
-            
+
         # Check if name column has duplicate values
         if attendees_df['name'].duplicated().any():
             duplicate_names = attendees_df[attendees_df['name'].duplicated()]['name'].unique().tolist()
             error_msg = f"CSV file contains duplicate names: {', '.join(duplicate_names)}"
             print(error_msg)
             raise ValueError(error_msg)
-        
+
         if attendees_df['telegram_id'].duplicated().any():
             duplicate_names = attendees_df[attendees_df['name'].duplicated()]['name'].unique().tolist()
             error_msg = f"CSV file contains duplicate Telegram IDs: {', '.join(duplicate_names)}"
             print(error_msg)
             raise ValueError(error_msg)
-            
+
         # Check for empty values in critical columns
         for col in ['name', 'telegram_id']:
             if attendees_df[col].isna().any():
@@ -134,7 +135,7 @@ def load_attendees(attendees_csv):
                 error_msg = f"Missing values in '{col}' column at rows: {', '.join(map(str, missing_rows))}"
                 print(error_msg)
                 raise ValueError(error_msg)
-        
+
         attendees_df.set_index('name', drop=False, inplace=True)
 
         attendees = {
@@ -142,14 +143,14 @@ def load_attendees(attendees_csv):
             for _, row in attendees_df.iterrows()
         }
         attendees = {attendee.name: attendee for attendee in attendees.values()}  # key is name, value is Attendee object
-        
+
         return attendees
-        
+
     except pd.errors.EmptyDataError:
         error_msg = "The attendees CSV file is empty"
         print(error_msg)
         raise ValueError(error_msg)
-        
+
     except pd.errors.ParserError as e:
         error_msg = f"Error parsing the attendees CSV file: {str(e)}"
         print(error_msg)
@@ -163,7 +164,7 @@ def load_pairing_scores(pairing_scores_csv, attendees):
     except FileNotFoundError:
         attendee_names = list(attendees.keys())
         pairing_scores = pd.DataFrame(0, index=attendee_names, columns=attendee_names)
-    
+
     return pairing_scores
 
 
@@ -288,9 +289,11 @@ def index():
 def download_file(filename):
     return send_from_directory(DOWNLOAD_FOLDER, filename)
 
+
 def run_flask():
     print("Running Flask app")
     app.run(debug=False)
+
 
 if __name__ == '__main__':
     # Register the signal handler
@@ -304,5 +307,5 @@ if __name__ == '__main__':
     window = webview.create_window("Group Generator", "http://127.0.0.1:5000")
 
     window.events.closed += close_window
-    
+
     webview.start()

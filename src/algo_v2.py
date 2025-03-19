@@ -1,6 +1,5 @@
 import random
 import pandas as pd
-import chardet
 import qa
 from collections import defaultdict
 
@@ -153,7 +152,6 @@ def main_workflow(pairing_scores, attendees, weights_list):
     if new_telegram_ids:
         pairing_scores = add_new_attendees(new_telegram_ids, pairing_scores)
 
-
     # groups is a list of Group objects
     groups = assign_groups(attendees, pairing_scores, weights)
 
@@ -173,8 +171,11 @@ def main_workflow(pairing_scores, attendees, weights_list):
 
 def groups_to_dataframe(groups):
     '''
-    Input: groups (List[List[Attendee]]): list of groups, where each group is a list of Attendee objects
-    Output: df (pd.DataFrame): DataFrame containing attendees and all attribtes, but now with a 'Group' column
+    Input: groups (List[List[Attendee]]): list of groups,
+    where each group is a list of Attendee objects
+
+    Output: df (pd.DataFrame): DataFrame containing
+    attendees and all attribtes, but now with a 'Group' column
     '''
     data = []
 
