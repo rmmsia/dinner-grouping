@@ -40,20 +40,8 @@ jobs:
           # Make sure the executable has right permissions
           chmod +x dist/app
           
-          # Create a macOS app launcher script
-          cat > dist/run-dinner-grouping.command << 'EOL'
-          #!/bin/bash
-          # Get the directory where this script is located
-          DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-          # Run the app executable from that directory
-          "$DIR/app"
-          EOL
-          
-          # Make the launcher script executable
-          chmod +x dist/run-dinner-grouping.command
-          
-          # Package everything in a zip to preserve permissions
-          cd dist && zip -r "dinner-grouping-mac.zip" app run-dinner-grouping.command && cd ..
+          # Package in a zip to preserve permissions
+          cd dist && zip -r "dinner-grouping-mac.zip" app && cd ..
       
       - name: Upload macOS build to GitHub Releases
         uses: softprops/action-gh-release@v1
@@ -87,12 +75,8 @@ jobs:
           # Rename to a more descriptive name
           move dist\app.exe dist\dinner-grouping.exe
           
-          # Create a simple batch file launcher
-          echo @echo off > dist\run-dinner-grouping.bat
-          echo start dinner-grouping.exe >> dist\run-dinner-grouping.bat
-          
-          # Zip everything for distribution
-          powershell Compress-Archive -Path "dist\dinner-grouping.exe","dist\run-dinner-grouping.bat" -DestinationPath "dist\dinner-grouping-windows.zip"
+          # Zip for distribution
+          powershell Compress-Archive -Path "dist\dinner-grouping.exe" -DestinationPath "dist\dinner-grouping-windows.zip"
 
       - name: Upload Windows build to GitHub Releases
         uses: softprops/action-gh-release@v1
@@ -114,36 +98,33 @@ jobs:
           files: |
             dist/dinner-grouping-mac.zip
             dist/dinner-grouping-windows.zip
-          name: Dinner Grouping ${{ github.event.inputs.tag_name || github.ref_name }}
+          name: ${{ github.event.inputs.tag_name || github.ref_name }}
           body: |
-            ## Dinner Grouping Tool
+            ## Installation Instructions
             
-            ### Installation Instructions
-            
-            #### macOS Users
+            ### macOS Users
             1. Download the `dinner-grouping-mac.zip` file
             2. Extract the zip file
-            3. **Option 1:** Double-click the `run-dinner-grouping.command` file to launch the app
-            4. **Option 2:** Open Terminal, navigate to the extracted folder, and run `./app`
-            5. If you get security warnings, go to System Preferences → Security & Privacy and click "Open Anyway"
+            3. Open Terminal and navigate to the extracted folder
+            4. Make the file executable: `chmod +x app`
+            5. The app should be able to run now. You should be able to subsequently double click to run it.
+            6. If you get security warnings, go to System Preferences → Security & Privacy and click "Open Anyway"
             
-            #### Windows Users
+            ### Windows Users
             1. Download the `dinner-grouping-windows.zip` file
             2. Extract the zip file
-            3. Double-click the `run-dinner-grouping.bat` file OR run `dinner-grouping.exe` directly
+            3. Run `dinner-grouping.exe` directly
             4. If Windows SmartScreen appears, click "More info" and then "Run anyway"
             
             ### Troubleshooting
             
             #### macOS
-            * If the `.command` file doesn't work, make it executable by opening Terminal and running:
+            * Make sure the app is executable:
               ```
-              chmod +x path/to/run-dinner-grouping.command
-              ```
-            * If you still have issues, try running the app directly in Terminal:
-              ```
-              cd path/to/extracted/folder
               chmod +x app
+              ```
+            * Run from Terminal to see any error messages:
+              ```
               ./app
               ```
             
