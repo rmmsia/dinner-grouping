@@ -14,7 +14,6 @@ on:
           required: true
           default: 'v1.0.0'
 
-
 jobs:
   build_mac:
     runs-on: macos-latest
@@ -35,17 +34,21 @@ jobs:
       
       - name: Build with PyInstaller for macOS
         run: |
-          pyinstaller --onefile --add-data "templates/*:templates" src/app.py
+          # Use --windowed for better user experience and app bundle for better macOS integration
+          pyinstaller --windowed --name="Dinner Grouping" --add-data "templates/*:templates" src/app.py
+          
+          # Create a zip archive of the app bundle
+          cd dist && zip -r "Dinner-Grouping-macOS.zip" "Dinner Grouping.app" && cd ..
       
       - name: Upload macOS build to GitHub Releases
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/app  # Path to your built macOS executable (app.py will be compiled to app)
+          files: dist/Dinner-Grouping-macOS.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build_windows:
-    runs-on: windows-latest  # Build for Windows
+    runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -53,21 +56,25 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.12'  # Adjust as needed
+          python-version: '3.10'  # Downgraded for better compatibility
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt  # Ensure PyInstaller is installed here
+          pip install -r requirements.txt
+          pip install pyinstaller
 
       - name: Build with PyInstaller for Windows
         run: |
-          pyinstaller --onefile --add-data "templates/index.html;templates" src/app.py
+          pyinstaller --windowed --name="Dinner Grouping" --add-data "templates/index.html;templates" src/app.py
+          
+          # Zip the output for easier distribution
+          Compress-Archive -Path "dist\Dinner Grouping" -DestinationPath "dist\Dinner-Grouping-Windows.zip"
 
       - name: Upload Windows build to GitHub Releases
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/app.exe  # Path to your built Windows executable
+          files: dist/Dinner-Grouping-Windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -78,11 +85,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Upload both builds to the same GitHub release
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/app-macos.zip # Updated macOS build name
-            dist/app.exe # Windows build
+            dist/Dinner-Grouping-macOS.zip
+            dist/Dinner-Grouping-Windows.zip
+          name: Dinner Grouping ${{ github.event.inputs.tag_name || github.ref_name }}
+          body: |
+            ## Dinner Grouping Application
+            
+            ### Installation Instructions
+            
+            #### macOS Users
+            1. Download the macOS zip file
+            2. Extract the application
+            3. **Important**: Right-click the app and select "Open" (do not double-click)
+            4. When prompted with security warnings, click "Open" again
+            5. The app will now be saved as an exception to your security settings
+            
+            #### Windows Users
+            1. Download the Windows zip file
+            2. Extract the folder
+            3. Run the "Dinner Grouping" executable inside the folder
+            
+            ### Troubleshooting
+            
+            #### macOS
+            * If you get "app is damaged" warnings, try right-clicking and selecting Open
+            * If Gatekeeper blocks the app, go to System Preferences > Security & Privacy, and click "Open Anyway"
+            
+            #### Windows
+            * If SmartScreen blocks the app, click "More info" and then "Run anyway"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
