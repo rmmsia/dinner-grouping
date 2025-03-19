@@ -181,7 +181,7 @@
                     contentType: false,
                     success: function(response) {
                         if (response.error) {
-                            $('#output').text('Error: ' + response.error);
+                            $('#output').html('<div class="alert alert-danger">' + response.error + '</div>');
                             $('#download-link').hide();
                         } else {
                             let outputText = '';
@@ -203,7 +203,21 @@
                         }
                     },
                     error: function(xhr, status, error) {
-                        $('#output').text('An error occurred: ' + error);
+                        // Extract detailed error message from the response if available
+                        let errorMessage = 'An error occurred';
+                        
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response && response.error) {
+                                errorMessage = response.error;
+                            } else {
+                                errorMessage += ': ' + error;
+                            }
+                        } catch (e) {
+                            errorMessage += ': ' + error;
+                        }
+                        
+                        $('#output').html('<div class="alert alert-danger">' + errorMessage + '</div>');
                         $('#download-link').hide();
                     }
                 });

@@ -83,6 +83,18 @@ def handle_signal(signal, frame):
 
 
 def load_attendees(attendees_csv):
+    """
+    Load attendees from a CSV file.
+    
+    Args:
+        attendees_csv (str): Path to the CSV file containing attendee information.
+        
+    Returns:
+        dict: Dictionary mapping attendee names to Attendee objects.
+        
+    Raises:
+        ValueError: If the CSV file is missing required columns or contains invalid data.
+    """
     # Detect encoding of attendees CSV
     with open(attendees_csv, 'rb') as f:
         result = chardet.detect(f.read())
@@ -90,16 +102,58 @@ def load_attendees(attendees_csv):
 
     # Load attendees
     print("Loading attendees")
-    attendees_df = pd.read_csv(attendees_csv, encoding=detected_encoding)
-    attendees_df.set_index('name', drop=False, inplace=True)
+    try:
+        attendees_df = pd.read_csv(attendees_csv, encoding=detected_encoding)
+        
+        # Check required columns
+        required_columns = ['name', 'gender', 'telegram_id', 'email', 'year', 'faculty']
+        missing_columns = [col for col in required_columns if col not in attendees_df.columns]
+        
+        if missing_columns:
+            error_msg = f"CSV file is missing required columns: {', '.join(missing_columns)}"
+            print(error_msg)
+            raise ValueError(error_msg)
+            
+        # Check if name column has duplicate values
+        if attendees_df['name'].duplicated().any():
+            duplicate_names = attendees_df[attendees_df['name'].duplicated()]['name'].unique().tolist()
+            error_msg = f"CSV file contains duplicate names: {', '.join(duplicate_names)}"
+            print(error_msg)
+            raise ValueError(error_msg)
+        
+        if attendees_df['telegram_id'].duplicated().any():
+            duplicate_names = attendees_df[attendees_df['name'].duplicated()]['name'].unique().tolist()
+            error_msg = f"CSV file contains duplicate Telegram IDs: {', '.join(duplicate_names)}"
+            print(error_msg)
+            raise ValueError(error_msg)
+            
+        # Check for empty values in critical columns
+        for col in ['name', 'telegram_id']:
+            if attendees_df[col].isna().any():
+                missing_rows = attendees_df[attendees_df[col].isna()].index.tolist()
+                error_msg = f"Missing values in '{col}' column at rows: {', '.join(map(str, missing_rows))}"
+                print(error_msg)
+                raise ValueError(error_msg)
+        
+        attendees_df.set_index('name', drop=False, inplace=True)
 
-    attendees = {
-        row['name']: Attendee(row['name'], row['gender'], row['telegram'], row['email'], row['year'], row['faculty'])
-        for _, row in attendees_df.iterrows()
-    }
-    attendees = {attendee.name: attendee for attendee in attendees.values()}  # key is name, value is Attendee object
-
-    return attendees
+        attendees = {
+            row['name']: Attendee(row['name'], row['gender'], row['telegram_id'], row['email'], row['year'], row['faculty'])
+            for _, row in attendees_df.iterrows()
+        }
+        attendees = {attendee.name: attendee for attendee in attendees.values()}  # key is name, value is Attendee object
+        
+        return attendees
+        
+    except pd.errors.EmptyDataError:
+        error_msg = "The attendees CSV file is empty"
+        print(error_msg)
+        raise ValueError(error_msg)
+        
+    except pd.errors.ParserError as e:
+        error_msg = f"Error parsing the attendees CSV file: {str(e)}"
+        print(error_msg)
+        raise ValueError(error_msg)
 
 
 def load_pairing_scores(pairing_scores_csv, attendees):
@@ -142,12 +196,6 @@ def index():
             csv_file = request.files['csv_file']
             attendees_file = request.files['attendees_file']  # Updated field name
 
-            # # Check for group size
-            # if not request.form.get('integer_input'):
-            #     return jsonify({'error': 'Group size is required'}), 400
-
-            # grp_size = request.form['integer_input']
-
             # Check for factors
             required_factors = ['factor1', 'factor2', 'factor3']
             if not all(factor in request.form for factor in required_factors):
@@ -183,11 +231,23 @@ def index():
             print("Files saved successfully")
 
             # Load attendees and pairing scores
-            attendees_data = load_attendees(attendees)
-            pairing_scores = load_pairing_scores(matrix, attendees)
+            try:
+                attendees_data = load_attendees(attendees)
+            except ValueError as e:
+                return jsonify({'error': f"Invalid attendees file: {str(e)}"}), 400
+            except Exception as e:
+                return jsonify({'error': f"Error processing attendees file: {str(e)}"}), 500
+
+            try:
+                pairing_scores = load_pairing_scores(matrix, attendees_data)
+            except Exception as e:
+                return jsonify({'error': f"Error processing pairing scores file: {str(e)}"}), 400
 
             # Generate groups
-            groups, group_scores = main_workflow(pairing_scores, attendees_data, factors)
+            try:
+                groups, group_scores = main_workflow(pairing_scores, attendees_data, factors)
+            except Exception as e:
+                return jsonify({'error': f"Error generating groups: {str(e)}"}), 500
 
             # Create DataFrame with groups for output
             df = groups_to_dataframe(groups)
@@ -216,7 +276,9 @@ def index():
             })
 
         except Exception as e:
+            import traceback
             print(f"Error occurred: {str(e)}")
+            print(traceback.format_exc())  # Print the full traceback for debugging
             return jsonify({'error': str(e)}), 500
 
     return render_template('index.html')
