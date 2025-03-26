@@ -77,14 +77,9 @@ def load_attendees(attendees_csv):
         raise ValueError(error_msg)
 
 
-def load_pairing_scores(pairing_scores_csv, attendees):
+def load_pairing_scores(pairing_scores_csv):
     # Load historical pairing scores
-    try:
-        pairing_scores = pd.read_csv(pairing_scores_csv, index_col=0)
-    except FileNotFoundError:
-        attendee_names = list(attendees.keys())
-        pairing_scores = pd.DataFrame(0, index=attendee_names, columns=attendee_names)
-
+    pairing_scores = pd.read_csv(pairing_scores_csv, index_col=0)
     return pairing_scores
 
 

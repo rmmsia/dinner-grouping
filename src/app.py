@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
 from algo_v2 import main_workflow, groups_to_dataframe
 from loaders import load_attendees, load_pairing_scores
+from patcher import patch_matrix, parse_groups_csv
 import pandas as pd
 import os
 import chardet
@@ -156,7 +157,7 @@ def index():
                 return jsonify({'error': f"Error processing attendees file: {str(e)}"}), 500
 
             try:
-                pairing_scores = load_pairing_scores(matrix, attendees_data)
+                pairing_scores = load_pairing_scores(matrix)
             except Exception as e:
                 return jsonify({'error': f"Error processing pairing scores file: {str(e)}"}), 400
 
@@ -201,9 +202,93 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/patch', methods=['POST'])
+def patch_data():
+    try:
+        # Check if files are empty
+        if 'pairing_scores_file' not in request.files or request.files['pairing_scores_file'].filename == '':
+            return jsonify({'error': 'Pairing scores CSV file is required'}), 400
+        if 'previous_groups_file' not in request.files or request.files['previous_groups_file'].filename == '':
+            return jsonify({'error': 'Previous groups CSV file is required'}), 400
+
+        # Get the patch value from form
+        try:
+            patch_value = int(request.form.get('patch_value', 1))
+            if patch_value <= 0:
+                return jsonify({'error': 'Patch value must be a positive integer'}), 400
+        except ValueError:
+            return jsonify({'error': 'Invalid patch value'}), 400
+
+        pairing_scores_file = request.files['pairing_scores_file']
+        previous_groups_file = request.files['previous_groups_file']
+
+        # Save uploaded files with unique names
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        scores_filename = f'scores_{timestamp}_{pairing_scores_file.filename}'
+        groups_filename = f'groups_{timestamp}_{previous_groups_file.filename}'
+
+        scores_path = os.path.join(UPLOAD_FOLDER, scores_filename)
+        groups_path = os.path.join(UPLOAD_FOLDER, groups_filename)
+
+        pairing_scores_file.save(scores_path)
+        previous_groups_file.save(groups_path)
+
+        print("Files saved successfully for patching")
+
+        try:
+            # Load the pairing scores matrix
+            pairing_scores = load_pairing_scores(scores_path)
+
+            groups = parse_groups_csv(groups_path)
+            
+            # Update the dataframe using the patcher function
+            updated_df = patch_matrix(pairing_scores, groups, patch_value)
+            print("Pairing scores patched successfully")
+            
+            # Save the updated dataframe
+            output_file = f'patched_scores_{timestamp}.csv'
+            output_path = os.path.join(DOWNLOAD_FOLDER, output_file)
+            updated_df.to_csv(output_path)
+            file_creation_times[output_file] = datetime.now()
+
+            # Clean up uploaded files
+            for file_path in [scores_path, groups_path]:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
+            # Return response in the SAME format as the index route
+            return jsonify({
+                'success': True,
+                'message': 'Pairing scores matrix updated successfully',
+                'download_url': f'/download/{output_file}'
+            })
+
+        except Exception as e:
+            import traceback
+            print(f"Error patching pairing scores: {str(e)}")
+            print(traceback.format_exc())
+            return jsonify({'error': f"Error patching pairing scores: {str(e)}"}), 500
+
+    except Exception as e:
+        import traceback
+        print(f"Error occurred: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/download/<filename>')
 def download_file(filename):
-    return send_from_directory(DOWNLOAD_FOLDER, filename)
+    """Serve a file from the download directory as an attachment."""
+    # Security check to prevent directory traversal
+    if '..' in filename or filename.startswith('/'):
+        return "Invalid filename", 400
+        
+    return send_file(
+        os.path.join(DOWNLOAD_FOLDER, filename),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=filename
+    )
 
 
 def run_flask():

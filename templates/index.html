@@ -112,6 +112,55 @@
         </div>
     </div>
 
+    <div class="container mt-5">
+        <h2>Update Pairing Scores</h2>
+        <div class="card">
+            <div class="card-body">
+                <form id="patchForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="pairing_scores_file" class="form-label">Pairing Scores Matrix</label>
+                        <input type="file" class="form-control" id="pairing_scores_file" name="pairing_scores_file" accept=".csv" required>
+                        <div class="form-text">Upload the CSV file containing your current pairing scores matrix.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="previous_groups_file" class="form-label">Previous Groups</label>
+                        <input type="file" class="form-control" id="previous_groups_file" name="previous_groups_file" accept=".csv" required>
+                        <div class="form-text">Upload the CSV file containing previous group assignments.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="patch_value" class="form-label">Patch Value</label>
+                        <input type="number" class="form-control" id="patch_value" name="patch_value" value="1" min="1">
+                        <div class="form-text">How much to increase the pairing score (higher = less likely to be paired again)</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Update Pairing Scores</button>
+                </form>
+                
+                <div id="patchStatus" class="mt-3" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="ms-2">Processing...</span>
+                </div>
+                
+                <div id="patchResult" class="mt-3" style="display: none;">
+                    <div class="alert alert-success">
+                        Pairing scores updated successfully!
+                    </div>
+                    <a id="patchDownloadLink" href="#" target="_blank" class="btn btn-secondary mt-2">Download Updated Matrix</a>
+                </div>
+                
+                <div id="patchError" class="mt-3" style="display: none;">
+                    <div class="alert alert-danger">
+                        <span id="patchErrorText"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         $(document).ready(function() {
             const sliders = ['factor1', 'factor2', 'factor3'];
@@ -219,6 +268,41 @@
                         
                         $('#output').html('<div class="alert alert-danger">' + errorMessage + '</div>');
                         $('#download-link').hide();
+                    }
+                });
+            });
+
+            document.getElementById('patchForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                
+                // Show processing status
+                document.getElementById('patchStatus').style.display = 'block';
+                document.getElementById('patchResult').style.display = 'none';
+                document.getElementById('patchError').style.display = 'none';
+                
+                $.ajax({
+                    url: '/patch',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        if (response.error) {
+                            document.getElementById('patchErrorText').innerText = response.error;
+                            document.getElementById('patchError').style.display = 'block';
+                        } else {
+                            document.getElementById('patchDownloadLink').href = response.download_url;
+                            document.getElementById('patchResult').style.display = 'block';
+                        }
+                        
+                        document.getElementById('patchStatus').style.display = 'none';
+                    },
+                    error: function(xhr, status, error) {
+                        document.getElementById('patchErrorText').innerText = 'An error occurred: ' + error;
+                        document.getElementById('patchError').style.display = 'block';
+                        document.getElementById('patchStatus').style.display = 'none';
                     }
                 });
             });

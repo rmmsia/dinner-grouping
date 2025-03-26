@@ -182,7 +182,7 @@ def groups_to_dataframe(groups):
     for idx, group in enumerate(groups, start=1):
         for member in group:
             member_data = vars(member)
-            member_data['Group'] = idx
+            member_data['group'] = idx
             data.append(member_data)
 
     df = pd.DataFrame(data)
