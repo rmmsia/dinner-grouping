@@ -106,12 +106,15 @@ def index():
             print("Files:", request.files)
 
             # Check if files are empty using the correct field names
-            if 'csv_file' not in request.files or request.files['csv_file'].filename == '':
-                return jsonify({'error': 'CSV file is required'}), 400
+            # PSM file is now optional
             if 'attendees_file' not in request.files or request.files['attendees_file'].filename == '':
                 return jsonify({'error': 'Attendees file is required'}), 400
 
-            csv_file = request.files['csv_file']
+            # PSM file is optional
+            psm_file = None
+            if 'psm_file' in request.files and request.files['psm_file'].filename != '':
+                psm_file = request.files['psm_file']
+
             attendees_file = request.files['attendees_file']  # Updated field name
 
             # Check for factors
@@ -137,14 +140,16 @@ def index():
 
             # Save uploaded files with unique names to prevent conflicts
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            matrix_filename = f'matrix_{timestamp}_{csv_file.filename}'
             attendees_filename = f'attendees_{timestamp}_{attendees_file.filename}'
-
-            matrix = os.path.join(UPLOAD_FOLDER, matrix_filename)
             attendees = os.path.join(UPLOAD_FOLDER, attendees_filename)
-
-            csv_file.save(matrix)
             attendees_file.save(attendees)
+
+            # Handle optional PSM file
+            matrix = None
+            if psm_file:
+                matrix_filename = f'matrix_{timestamp}_{psm_file.filename}'
+                matrix = os.path.join(UPLOAD_FOLDER, matrix_filename)
+                psm_file.save(matrix)
 
             print("Files saved successfully")
 
@@ -156,10 +161,16 @@ def index():
             except Exception as e:
                 return jsonify({'error': f"Error processing attendees file: {str(e)}"}), 500
 
-            try:
-                pairing_scores = load_pairing_scores(matrix)
-            except Exception as e:
-                return jsonify({'error': f"Error processing pairing scores file: {str(e)}"}), 400
+            # Handle optional PSM file
+            if matrix:
+                try:
+                    pairing_scores = load_pairing_scores(matrix)
+                except Exception as e:
+                    return jsonify({'error': f"Error processing pairing scores file: {str(e)}"}), 400
+            else:
+                # Create default pairing scores if no PSM file provided
+                # This assumes main_workflow can handle None or a default matrix
+                pairing_scores = None
 
             # Generate groups
             try:
@@ -175,9 +186,11 @@ def index():
             file_creation_times[output_file] = datetime.now()
 
             # Clean up uploaded files (fix)
-            for file_path in [matrix, attendees]:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+            if matrix:
+                if os.path.exists(matrix):
+                    os.remove(matrix)
+            if os.path.exists(attendees):
+                os.remove(attendees)
 
             # Convert groups to list of lists of names
             groups = [[member.name for member in group] for group in groups]
@@ -299,14 +312,10 @@ def run_flask():
 if __name__ == '__main__':
     # Register the signal handler
     signal.signal(signal.SIGINT, handle_signal)
-
-    flask_thread = threading.Thread(target=run_flask)
-    flask_thread.daemon = True
-    flask_thread.start()
-
-    # Open Flask app in native window
-    window = webview.create_window("Group Generator", "http://127.0.0.1:5000")
-
-    window.events.closed += close_window
-
-    webview.start()
+    
+    # Simple vanilla Flask server
+    print("Running Flask app at http://127.0.0.1:5000")
+    print("Press Ctrl+C to exit")
+    
+    # Enable debug mode for auto-reloading when code changes
+    app.run(debug=True)
