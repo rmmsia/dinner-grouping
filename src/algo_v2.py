@@ -29,6 +29,9 @@ class Group:
 
 
 def determine_group_size(num_attendees, max_size=5):
+    if num_attendees == 0:
+        return []
+
     g = (num_attendees + max_size - 1) // max_size  # Calculate minimum groups needed
     q, r = divmod(num_attendees, g)  # Compute base size and remainder
     group_sizes = [q + 1] * r + [q] * (g - r)  # First 'r' groups get q+1, rest get q
