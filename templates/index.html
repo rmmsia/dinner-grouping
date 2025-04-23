@@ -111,6 +111,25 @@
             <pre id="output" class="mt-3"></pre>
             <a id="download-link" href="#" target="_blank" class="btn btn-secondary mt-2" style="display: none;">Download Groups</a>
         </div>
+
+        <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p>You haven't uploaded a pairing score matrix. Without historical data, the generated groups may not be optimal.</p>
+                <p>Do you want to continue with a default matrix (all zeros)?</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmProceed">Proceed</button>
+              </div>
+            </div>
+          </div>
+        </div>
     </div>
 
     <div class="container mt-5">
@@ -214,7 +233,32 @@
             $('#grouping-form').on('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
+                const psmFile = formData.get('psm_file');
 
+                // Check if PSM file is provided
+                if (!psmFile || psmFile.size === 0) {
+                    // No PSM file provided, show confirmation modal
+                    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+                    confirmModal.show();
+                } else {
+                    // PSM file is provided, proceed with form submission
+                    submitGroupingForm(formData);
+                }
+            });
+
+            // Add confirmation action handler
+            $('#confirmProceed').on('click', function() {
+                // Hide the modal
+                const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+                confirmModal.hide();
+                
+                // Get form data and proceed
+                const formData = new FormData(document.getElementById('grouping-form'));
+                submitGroupingForm(formData);
+            });
+
+            // Function to submit the form
+            function submitGroupingForm(formData) {
                 // Add slider values to form data
                 sliders.forEach(id => {
                     formData.append(id, $('#' + id).val());
@@ -242,7 +286,7 @@
 
                             // Display the group goodness score if the toggle was enabled
                             if (response.goodness_score) {
-                                $('#output').append(`<h4>Group Goodness Score: ${response.goodness_score}</h4>`);
+                                $('#output').append(`\nGroup Goodness Score: ${response.goodness_score}`);
                             }
 
                             if (response.download_url) {
@@ -271,7 +315,7 @@
                         $('#download-link').hide();
                     }
                 });
-            });
+            }
 
             document.getElementById('patchForm').addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -310,5 +354,6 @@
 
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>

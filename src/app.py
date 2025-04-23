@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
-from algo_v2 import main_workflow, groups_to_dataframe
+from algo_v2 import main_workflow, groups_to_dataframe, generate_default_psm
 from loaders import load_attendees, load_pairing_scores
 from patcher import patch_matrix, parse_groups_csv
 import pandas as pd
@@ -170,7 +170,7 @@ def index():
             else:
                 # Create default pairing scores if no PSM file provided
                 # This assumes main_workflow can handle None or a default matrix
-                pairing_scores = None
+                pairing_scores = generate_default_psm(attendees_data)
 
             # Generate groups
             try:

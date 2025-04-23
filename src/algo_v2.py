@@ -192,3 +192,21 @@ def groups_to_dataframe(groups):
     df.set_index('name', inplace=True)
 
     return df
+
+
+def generate_default_psm(attendees_data):
+    '''
+    Create a default pairing score matrix (PSM) with all scores set to 0 based on the attendees.
+    
+    Input: attendees_data (List[Attendee]): list of Attendee objects
+    Output: psm (pd.DataFrame): DataFrame representing the pairing score matrix
+    '''
+
+    num_attendees = len(attendees_data)
+    if num_attendees == 0:
+        return pd.DataFrame()
+    
+    # Create a DataFrame with all scores initialized to 0, row and column index == telegram_ids
+    telegram_ids = [attendee.telegram_id for attendee in attendees_data.values()]
+    psm = pd.DataFrame(0, index=telegram_ids, columns=telegram_ids)
+    return psm

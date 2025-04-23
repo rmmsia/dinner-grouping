@@ -70,3 +70,34 @@ Member = namedtuple("Member", ["gender", "year", "faculty"])
 ])
 def test_calc_diversity_score(candidate, group, weights, expected):
     assert al.calc_diversity_score(candidate, group, weights) == pytest.approx(expected)
+
+
+# Test generate_default_psm function
+Attendee = namedtuple("Attendee", ["telegram_id"])
+
+def test_empty_attendees():
+    attendees_data = {}
+    psm = al.generate_default_psm(attendees_data)
+    assert isinstance(psm, pd.DataFrame)
+    assert psm.empty
+
+def test_single_attendee():
+    attendees_data = {
+        "user1": Attendee(telegram_id="tg_1")
+    }
+    psm = al.generate_default_psm(attendees_data)
+    assert list(psm.index) == ["tg_1"]
+    assert list(psm.columns) == ["tg_1"]
+    assert psm.loc["tg_1", "tg_1"] == 0
+
+def test_multiple_attendees():
+    attendees_data = {
+        "user1": Attendee(telegram_id="tg_1"),
+        "user2": Attendee(telegram_id="tg_2"),
+        "user3": Attendee(telegram_id="tg_3")
+    }
+    psm = al.generate_default_psm(attendees_data)
+    ids = ["tg_1", "tg_2", "tg_3"]
+    assert list(psm.index) == ids
+    assert list(psm.columns) == ids
+    assert (psm == 0).all().all()  # all values should be 0
