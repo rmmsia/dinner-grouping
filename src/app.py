@@ -218,9 +218,7 @@ def index():
 @app.route('/patch', methods=['POST'])
 def patch_data():
     try:
-        # Check if files are empty
-        if 'pairing_scores_file' not in request.files or request.files['pairing_scores_file'].filename == '':
-            return jsonify({'error': 'Pairing scores CSV file is required'}), 400
+        # Check if previous groups file is provided (required)
         if 'previous_groups_file' not in request.files or request.files['previous_groups_file'].filename == '':
             return jsonify({'error': 'Previous groups CSV file is required'}), 400
 
@@ -232,27 +230,50 @@ def patch_data():
         except ValueError:
             return jsonify({'error': 'Invalid patch value'}), 400
 
-        pairing_scores_file = request.files['pairing_scores_file']
         previous_groups_file = request.files['previous_groups_file']
 
         # Save uploaded files with unique names
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        scores_filename = f'scores_{timestamp}_{pairing_scores_file.filename}'
         groups_filename = f'groups_{timestamp}_{previous_groups_file.filename}'
-
-        scores_path = os.path.join(UPLOAD_FOLDER, scores_filename)
         groups_path = os.path.join(UPLOAD_FOLDER, groups_filename)
-
-        pairing_scores_file.save(scores_path)
         previous_groups_file.save(groups_path)
 
-        print("Files saved successfully for patching")
+        # Handle optional pairing scores file
+        scores_path = None
+        if 'pairing_scores_file' in request.files and request.files['pairing_scores_file'].filename != '':
+            pairing_scores_file = request.files['pairing_scores_file']
+            scores_filename = f'scores_{timestamp}_{pairing_scores_file.filename}'
+            scores_path = os.path.join(UPLOAD_FOLDER, scores_filename)
+            pairing_scores_file.save(scores_path)
+            print("Both files saved successfully for patching")
+        else:
+            print("Only groups file saved, will create new pairing scores matrix")
 
         try:
-            # Load the pairing scores matrix
-            pairing_scores = load_pairing_scores(scores_path)
-
+            # Parse the groups first to get the attendee names
             groups = parse_groups_csv(groups_path)
+            
+            # Extract all unique attendees from the groups
+            all_attendees = set()
+            for group in groups:
+                all_attendees.update(group)
+            all_attendees_list = sorted(list(all_attendees))
+                
+            # Load the pairing scores matrix if provided, otherwise create a default one
+            if scores_path:
+                pairing_scores = load_pairing_scores(scores_path)
+                
+                # Check if there are new attendees not in the pairing scores matrix
+                new_attendees = [attendee for attendee in all_attendees_list if attendee not in pairing_scores.index]
+                
+                # Add new attendees to the matrix using the existing function
+                if new_attendees:
+                    print(f"Found {len(new_attendees)} new attendees not in the existing matrix. Adding them.")
+                    from algo_v2 import add_new_attendees
+                    pairing_scores = add_new_attendees(new_attendees, pairing_scores)
+            else:
+                # Create a new empty pairing scores matrix based on the groups
+                pairing_scores = pd.DataFrame(0, index=all_attendees_list, columns=all_attendees_list)
             
             # Update the dataframe using the patcher function
             updated_df = patch_matrix(pairing_scores, groups, patch_value)
@@ -265,9 +286,10 @@ def patch_data():
             file_creation_times[output_file] = datetime.now()
 
             # Clean up uploaded files
-            for file_path in [scores_path, groups_path]:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+            if scores_path and os.path.exists(scores_path):
+                os.remove(scores_path)
+            if os.path.exists(groups_path):
+                os.remove(groups_path)
 
             # Return response in the SAME format as the index route
             return jsonify({

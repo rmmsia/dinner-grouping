@@ -101,3 +101,13 @@ def test_multiple_attendees():
     assert list(psm.index) == ids
     assert list(psm.columns) == ids
     assert (psm == 0).all().all()  # all values should be 0
+
+def test_add_new_attendees():
+    # Test that new attendees are correctly added to an existing matrix
+    matrix = pd.DataFrame(0, index=['user1', 'user2'], columns=['user1', 'user2'])
+    new_attendees = ['user3', 'user4']
+    updated_matrix = al.add_new_attendees(new_attendees, matrix)
+    
+    assert set(updated_matrix.index) == {'user1', 'user2', 'user3', 'user4'}
+    assert set(updated_matrix.columns) == {'user1', 'user2', 'user3', 'user4'}
+    assert updated_matrix.loc['user3', 'user4'] == 0

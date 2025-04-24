@@ -2,9 +2,10 @@ import os
 import pytest
 import pandas as pd
 import sys
+import tempfile
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-from patcher import patch_matrix
+from patcher import patch_matrix, parse_groups_csv
 
 
 # Sample data of a pairing scores matrix containing 10 members
@@ -62,3 +63,17 @@ def test_patch_matrix(test_matrix, test_groups):
     for i in result_df.index:
         for j in result_df.columns:
             assert result_df.loc[i, j] == result_df.loc[j, i]
+
+
+def test_parse_groups_csv():
+    # Create a test CSV and verify correct parsing
+    with tempfile.NamedTemporaryFile(suffix='.csv', mode='w+', delete=False) as f:
+        f.write("group,telegram_id\n1,user1\n1,user2\n2,user3\n2,user4\n")
+        f.flush()
+    
+    groups = parse_groups_csv(f.name)
+    os.unlink(f.name)
+    
+    assert len(groups) == 2
+    assert set(groups[0]) == {'user1', 'user2'}
+    assert set(groups[1]) == {'user3', 'user4'}
